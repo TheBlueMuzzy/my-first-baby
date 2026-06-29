@@ -3,16 +3,17 @@
 _Last updated: 2026-06-29_
 
 ## ▶ RESUME HERE
-Cloud sync, accounts, and the photo gallery are **built and verified end-to-end**.
-The only thing left is **deploying to GitHub Pages**, which needs Muzzy's input
-(repo name + GitHub account). Everything else works locally right now.
+Cloud sync, accounts, the photo gallery, AND deployment are **done and verified**.
+The app is LIVE: **https://thebluemuzzy.github.io/my-first-baby/**
+(repo: https://github.com/TheBlueMuzzy/my-first-baby, public).
+Redeploy any time with **`npm run deploy`** (builds + pushes `dist` to the `gh-pages` branch).
 
-Two small follow-ups for Muzzy (not code):
+Follow-ups for Muzzy (Supabase dashboard, not code) — do these before real sign-ups:
 1. **Rotate the `sbp_…` Supabase access token** — it was shared in chat earlier.
-2. (Optional) In Supabase → Authentication → Providers → Email, decide whether to keep
-   **"Confirm email" ON** (more secure; each person clicks a link in their inbox before
-   first sign-in) or turn it **OFF** (instant sign-in, fine for a 2-person private app).
-   It's currently ON. The app handles both — if ON, it shows a "check your email" message.
+2. **Set Auth → URL Configuration → Site URL** to `https://thebluemuzzy.github.io/my-first-baby/`
+   so email-confirmation links point at the live app (they'd otherwise go to localhost).
+   ALTERNATIVELY, turn **Auth → Providers → Email → "Confirm email" OFF** for instant
+   sign-in (fine for a 2-person private app). It's currently ON; the app handles both.
 
 ## What this is
 A pregnancy & first-year companion web app (PWA) for Muzzy + partner. Installable on
@@ -63,13 +64,21 @@ reload re-hydrates from cloud → photo upload (file → storage + DB row) → e
 → delete (removes storage file too). Test data was cleaned up afterward — DB is empty and
 ready for Muzzy's real account.
 
-## Next
-1. **Deploy to GitHub Pages.** `.github/workflows/deploy.yml` is ready (builds on push to
-   main, needs repo secrets `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`). Production
-   build is clean (`npm run build` → 127 KB gzip). Needs: git init, a GitHub repo, push,
-   then Settings → Pages → Source = GitHub Actions. **Waiting on Muzzy** for repo name/visibility.
-2. Polish: real maskable PNG app icons; drag-to-reschedule on the calendar; custom
-   "add your own task/event" (the `events` table is ready for this).
+## Done — deploy (THIS SESSION)
+- Public repo `TheBlueMuzzy/my-first-baby` created and pushed (git, `main` branch).
+- Deploy via the `gh-pages` npm package: `npm run deploy` builds locally (reads the
+  gitignored `.env.production` for the publishable Supabase values) and pushes `dist` to
+  the `gh-pages` branch. GitHub Pages serves that branch. Verified live: HTTP 200, app
+  boots, sign-in renders, 0 console errors.
+- Chose gh-pages-package over GitHub Actions because the local `gh` token lacks the
+  `workflow` scope (can't push `.github/workflows/`), and the publishable key only needs
+  to exist in the built bundle (never in repo source).
+
+## Next (polish, optional)
+1. Real maskable PNG app icons (currently a placeholder SVG).
+2. Drag-to-reschedule on the calendar.
+3. Custom "add your own task/event" — the `events` table + RLS are already built for this.
+4. Consider photo realtime (gallery currently refetches on open/upload/delete, not live).
 
 ## Known small items
 - Current week (6) shows no group in Schedule because the first items start at week 8 — harmless.
