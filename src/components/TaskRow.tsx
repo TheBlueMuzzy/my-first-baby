@@ -1,0 +1,42 @@
+import { useNavigate } from 'react-router-dom'
+import { format } from 'date-fns'
+import { DatedItem } from '../lib/schedule'
+import { setTaskState } from '../lib/storage'
+
+export default function TaskRow({ d, showDate = true }: { d: DatedItem; showDate?: boolean }) {
+  const navigate = useNavigate()
+  const { item, state, date } = d
+  const done = state.status === 'done'
+  const skipped = state.status === 'skipped'
+
+  function toggle(e: React.MouseEvent) {
+    e.stopPropagation()
+    setTaskState(item.id, { status: done ? 'todo' : 'done' })
+  }
+
+  return (
+    <div
+      className={'row' + (done ? ' row--done' : '') + (skipped ? ' row--skipped' : '')}
+      onClick={() => navigate('/task/' + item.id)}
+    >
+      <button
+        className={'check' + (done ? ' check--on' : '')}
+        onClick={toggle}
+        aria-label={done ? 'Mark not done' : 'Mark done'}
+      >
+        {done ? '✓' : ''}
+      </button>
+      <span className={'dot dot--' + item.category} />
+      <div className="row__body">
+        <div className="row__title">{item.title}</div>
+        <div className="row__meta">
+          {showDate && <span>{format(date, 'EEE, MMM d')}</span>}
+          {item.appointment && <span className="pill">appointment</span>}
+          {skipped && <span className="pill pill--muted">skipped</span>}
+          {d.custom && <span className="pill pill--muted">moved</span>}
+        </div>
+      </div>
+      <span className="row__chev">›</span>
+    </div>
+  )
+}
