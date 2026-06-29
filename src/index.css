@@ -209,6 +209,8 @@ button { font-family: inherit; cursor: pointer; }
 .auth__switch { display: block; width: 100%; text-align: center; margin-top: 12px; color: var(--sage-deep); opacity: 1; }
 .auth__msg { color: var(--terra); font-size: 14px; margin: 4px 0 10px; }
 .auth__tabs { justify-content: center; }
+.or-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 16px 4px; }
+.or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .join-code {
   font-size: 30px; font-weight: 700; letter-spacing: 6px;
   color: var(--sage-deep); margin: 6px 0 8px;

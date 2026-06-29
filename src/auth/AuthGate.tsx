@@ -165,15 +165,15 @@ function SignIn() {
 }
 
 function Onboarding({ onDone }: { onDone: () => void }) {
-  const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('Our family')
   const [code, setCode] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [busy, setBusy] = useState<'create' | 'join' | null>(null)
+  const [createMsg, setCreateMsg] = useState<string | null>(null)
+  const [joinMsg, setJoinMsg] = useState<string | null>(null)
 
   async function create() {
-    setBusy(true)
-    setMsg(null)
+    setBusy('create')
+    setCreateMsg(null)
     try {
       const { data, error } = await supabase!.rpc('create_household', { p_name: name })
       if (error) throw error
@@ -183,15 +183,15 @@ function Onboarding({ onDone }: { onDone: () => void }) {
       pushDueDate(format(getDueDate(), 'yyyy-MM-dd'))
       onDone()
     } catch (err: any) {
-      setMsg(err?.message ?? 'Something went wrong.')
+      setCreateMsg(err?.message ?? 'Something went wrong.')
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
   async function join() {
-    setBusy(true)
-    setMsg(null)
+    setBusy('join')
+    setJoinMsg(null)
     try {
       const { data, error } = await supabase!.rpc('join_household', { p_code: code.trim().toUpperCase() })
       if (error) throw error
@@ -199,57 +199,64 @@ function Onboarding({ onDone }: { onDone: () => void }) {
       await activateSync(h.id, h.join_code)
       onDone()
     } catch (err: any) {
-      setMsg(err?.message?.includes('invalid join code') ? "That code didn't match — double-check it." : err?.message)
+      setJoinMsg(
+        err?.message?.includes('invalid join code')
+          ? "That code didn't match — double-check it with your partner."
+          : (err?.message ?? 'Something went wrong.'),
+      )
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
   return (
     <div className="auth">
-      <div className="auth__brand">Almost there</div>
-      <div className="chips auth__tabs">
-        <button className={'chip' + (tab === 'create' ? ' chip--on' : '')} onClick={() => setTab('create')}>
-          Start fresh
-        </button>
-        <button className={'chip' + (tab === 'join' ? ' chip--on' : '')} onClick={() => setTab('join')}>
-          Join my partner
+      <div className="auth__brand">One last step</div>
+      <p className="muted auth__tag">Are you joining your partner, or setting things up?</p>
+
+      {/* Join is first and prominent — most partners arrive here with a code in hand. */}
+      <div className="auth__card">
+        <h2>Joining your partner? 🤝</h2>
+        <p className="muted small">
+          They'll have given you a 6-character code from their app. Enter it here to share their space.
+        </p>
+        <div className="field">
+          <label>Partner's code</label>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            maxLength={6}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            placeholder="ABC123"
+          />
+        </div>
+        {joinMsg && <p className="auth__msg">{joinMsg}</p>}
+        <button
+          className="btn btn--on auth__submit"
+          disabled={busy !== null || code.trim().length < 6}
+          onClick={join}
+        >
+          {busy === 'join' ? 'Joining…' : 'Join with code'}
         </button>
       </div>
 
-      {tab === 'create' ? (
-        <div className="auth__card">
-          <h2>Create your space</h2>
-          <p className="muted small">You'll get a code to share with your partner so you both see the same plan.</p>
-          <div className="field">
-            <label>Name this space</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          {msg && <p className="auth__msg">{msg}</p>}
-          <button className="btn btn--on auth__submit" disabled={busy} onClick={create}>
-            {busy ? 'Setting up…' : 'Create'}
-          </button>
+      <div className="or-divider">or</div>
+
+      <div className="auth__card">
+        <h2>Setting things up? ✨</h2>
+        <p className="muted small">
+          Create your space first — then you'll get a code to text your partner so they can join you.
+        </p>
+        <div className="field">
+          <label>Name this space (optional)</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-      ) : (
-        <div className="auth__card">
-          <h2>Enter the code</h2>
-          <p className="muted small">Ask your partner for the 6-character code from their app.</p>
-          <div className="field">
-            <label>Join code</label>
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              maxLength={6}
-              autoCapitalize="characters"
-              placeholder="ABC123"
-            />
-          </div>
-          {msg && <p className="auth__msg">{msg}</p>}
-          <button className="btn btn--on auth__submit" disabled={busy || code.trim().length < 6} onClick={join}>
-            {busy ? 'Joining…' : 'Join'}
-          </button>
-        </div>
-      )}
+        {createMsg && <p className="auth__msg">{createMsg}</p>}
+        <button className="btn btn--on auth__submit" disabled={busy !== null} onClick={create}>
+          {busy === 'create' ? 'Setting up…' : 'Create our space'}
+        </button>
+      </div>
     </div>
   )
 }
