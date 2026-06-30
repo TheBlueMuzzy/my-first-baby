@@ -142,6 +142,18 @@ ready for Muzzy's real account.
 All four of Muzzy's requested items + general UX polish are built & deployed:
 interaction feel, live photos, heart icon, add-your-own task/event, long-press reschedule.
 
+## Done — Schedule drag-to-reschedule (2026-06-30, deployed)
+- Nav order swapped: Today · **Schedule · Calendar** · Gallery · Account.
+- Schedule rewritten with **dnd-kit** (`@dnd-kit/core` + `/sortable` + `/utilities`):
+  long-press (220ms) lifts a card into a tilted DragOverlay + haptic; the source becomes a
+  dashed placeholder gap; sibling cards shift to open the drop gap; edge auto-scroll.
+  On drop, the card is **rescheduled to the day it lands on** (`over` item's date →
+  setTaskState customDate for presets / updateEvent date for events). Quick tap still opens
+  the item; the check button still toggles. `src/views/Agenda.tsx` is now a flat dnd list
+  (week headers + sortable rows) instead of nested `.weekgroup` sections.
+- Verified: Schedule renders, tap-to-open still works, 0 errors. The drag gesture itself
+  is best tested on a touch device (not exercised on Muzzy's live data).
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
