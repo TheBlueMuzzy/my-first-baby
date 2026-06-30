@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
-  DragStartEvent, DragEndEvent,
+  MeasuringStrategy, DragStartEvent, DragEndEvent,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -98,6 +98,7 @@ export default function Agenda() {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
