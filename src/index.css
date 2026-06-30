@@ -182,7 +182,8 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .row--overlay {
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
   display: flex; align-items: center; gap: 10px; padding: 12px;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22); transform: rotate(2.5deg); cursor: grabbing;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22); cursor: grabbing;
+  transform: rotate(2.5deg); transition: none; /* hold the angle while dragging */
 }
 
 /* ---------- Floating bottom controls (thumb zone) ---------- */

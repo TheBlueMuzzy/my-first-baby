@@ -120,7 +120,7 @@ export default function Agenda() {
         </SortableContext>
         <DragOverlay>
           {activeItem ? (
-            <div className="row row--overlay">
+            <div className="row--overlay">
               <span className={'dot dot--' + activeItem.item.category} />
               <div className="row__body">
                 <div className="row__title">{activeItem.item.title}</div>
