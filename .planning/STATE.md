@@ -165,6 +165,12 @@ interaction feel, live photos, heart icon, add-your-own task/event, long-press r
   from `.content`, let body scroll; keep the fixed tabbar) — dnd-kit handles window scroll
   natively. That's a small layout change to try next.
 
+## Done — reset schedule (2026-06-30, deployed)
+- Account → "Reset schedule" → two-step confirm. `resetSchedule({clearEvents})` in
+  storage.ts deletes all `tasks` rows (cloud+local), optionally all `events`, then
+  re-seeds the July 13 first visit. Restores recommended dates/order, clears check-offs &
+  notes. Photos/account untouched. Verified UI renders (not executed on Muzzy's data).
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
