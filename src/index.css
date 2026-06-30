@@ -58,10 +58,16 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 }
 .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px; text-decoration: none; color: var(--muted); font-size: 11px;
+  gap: 3px; text-decoration: none; color: var(--muted); font-size: 11px;
 }
 .tab--active { color: var(--sage-deep); }
-.tab__icon { font-size: 20px; line-height: 1; }
+.tab--active .tab__label { font-weight: 600; }
+.tab__icon {
+  font-size: 19px; line-height: 1;
+  width: 46px; height: 26px; display: grid; place-items: center; border-radius: 99px;
+  transition: background-color .15s ease, transform .09s ease;
+}
+.tab--active .tab__icon { background: #e3ede6; }
 
 /* ---------- Hero ---------- */
 .hero {
