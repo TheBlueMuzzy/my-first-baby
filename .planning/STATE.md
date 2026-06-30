@@ -194,6 +194,19 @@ build shows on the NEXT load. So when testing the live URL, **reload twice** (or
 to see a fresh deploy. (Confirmed: a stale SW was hiding the new sign-in "Forgot password?"
 link until the SW updated.) For rapid iteration, localhost dev has no SW (instant).
 
+## Done — vertical calendar + drag visuals restored (2026-06-30, deployed)
+- **Calendar** (`CalendarView.tsx`) rewritten: one continuous vertical scroll of month grids
+  (this month → last scheduled item's month). Each month = DOW header + week rows. Tapping a
+  day expands its items inline (`.cal-expand`) right below that week, pushing later months
+  down (accordion); tap again collapses. Long-press an item → move mode → tap any day. The
+  prev/next month FABs are gone.
+- **Schedule drag** restored the floating tilted card (DragOverlay, `.row--overlay` rotate
+  2.5deg) + dashed placeholder (`.row--placeholder`). Safe now: the overlay flew off only
+  because `.view`'s animated transform made it the containing block (offset the fixed overlay
+  by the column's left position ~1000px on desktop). That transform is gone (opacity-only
+  fade-in), so the overlay is viewport-relative again. Verified by diagnosis, not live drag
+  (synthetic dnd-kit drag won't start in the harness) — Muzzy to confirm feel on device.
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
