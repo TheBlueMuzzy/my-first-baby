@@ -126,6 +126,18 @@ ready for Muzzy's real account.
   date via updateEvent). `src/views/CalendarView.tsx`. Pick-up verified via Playwright;
   the drop write mirrors the verified task/event paths (not exercised on Muzzy's live data).
 
+## Done — account management (2026-06-30, deployed)
+- `/account` screen (via "Manage account" on Today): shows signed-in email + shared code,
+  **change password** (re-verifies current password by re-signing-in before updateUser),
+  **change email** (updateUser → confirmation email), **sign out**. `src/views/Account.tsx`.
+- Sign-in: **"Forgot password?"** → `resetPasswordForEmail(redirectTo = origin+pathname)`.
+- **Recovery:** the `PASSWORD_RECOVERY` auth event shows a "set new password" screen in
+  `AuthGate`. Account screen verified rendering (read-only, no submit on Muzzy's account).
+- TESTING CAVEAT: the email round-trips (reset link, email-change confirm) need a real
+  inbox — not verified here. Reset links only work for allowlisted redirect URLs (the Pages
+  URL is allowlisted; localhost is not). Supabase's built-in email is rate-limited (~few/hour);
+  fine for 2 people, but a custom SMTP would be needed at scale.
+
 ## Polish list — COMPLETE
 All four of Muzzy's requested items + general UX polish are built & deployed:
 interaction feel, live photos, heart icon, add-your-own task/event, long-press reschedule.
