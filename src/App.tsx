@@ -1,3 +1,4 @@
+import { ReactNode } from 'react'
 import { HashRouter, Routes, Route, NavLink } from 'react-router-dom'
 import Home from './views/Home'
 import CalendarView from './views/CalendarView'
@@ -29,6 +30,7 @@ export default function App() {
             <Tab to="/calendar" label="Calendar" icon="▦" />
             <Tab to="/schedule" label="Schedule" icon="☰" />
             <Tab to="/gallery" label="Gallery" icon="❏" />
+            <Tab to="/account" label="Account" icon={<PersonIcon />} />
           </nav>
         </div>
       </HashRouter>
@@ -36,11 +38,21 @@ export default function App() {
   )
 }
 
-function Tab({ to, label, icon }: { to: string; label: string; icon: string }) {
+function Tab({ to, label, icon }: { to: string; label: string; icon: ReactNode }) {
   return (
     <NavLink to={to} className={({ isActive }) => 'tab' + (isActive ? ' tab--active' : '')} end={to === '/'}>
       <span className="tab__icon">{icon}</span>
       <span className="tab__label">{label}</span>
     </NavLink>
+  )
+}
+
+// Simple person outline; uses currentColor so it matches the tab's active/inactive color.
+function PersonIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+    </svg>
   )
 }
