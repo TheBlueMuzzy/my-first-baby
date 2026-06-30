@@ -119,9 +119,21 @@ ready for Muzzy's real account.
   password via `extensions.crypt(pw, extensions.gen_salt('bf'))`, plus an `auth.identities`
   row. Delete the user afterward.
 
-## Next (remaining polish)
-1. **Drag-to-reschedule** on the calendar (mobile drag is fiddly — consider long-press,
-   or a simpler "move to selected day" action). Last item on Muzzy's polish list.
+## Done — long-press reschedule (2026-06-30, deployed)
+- On the Calendar, press & hold an item in the day list → "moving" banner + lifted row +
+  haptic; the grid switches to drop mode (dashed cells); tap any day to move it; Cancel to
+  abort. Works for presets (sets custom-date override via setTaskState) and events (sets
+  date via updateEvent). `src/views/CalendarView.tsx`. Pick-up verified via Playwright;
+  the drop write mirrors the verified task/event paths (not exercised on Muzzy's live data).
+
+## Polish list — COMPLETE
+All four of Muzzy's requested items + general UX polish are built & deployed:
+interaction feel, live photos, heart icon, add-your-own task/event, long-press reschedule.
+
+## Possible future (not requested)
+- Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
+- Rename household / leave household; multiple custom event reminders/notifications.
+- The app has never been installed to a home screen yet (Muzzy waiting for ~98% done).
 
 ## Known small items
 - Current week (6) shows no group in Schedule because the first items start at week 8 — harmless.
