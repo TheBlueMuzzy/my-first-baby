@@ -5,12 +5,14 @@ import { buildSchedule } from '../lib/schedule'
 import { getDueDate, lmpFromDue, getProgress, dateForWeek } from '../lib/pregnancy'
 import { Category, CATEGORY_LABEL } from '../data/timeline'
 import TaskRow from '../components/TaskRow'
+import EventModal from '../components/EventModal'
 
 const CATEGORIES: Category[] = ['medical', 'health', 'admin', 'prep', 'partner']
 
 export default function Agenda() {
   useStoreVersion()
   const [filter, setFilter] = useState<Category | 'all'>('all')
+  const [adding, setAdding] = useState(false)
   const due = getDueDate()
   const lmp = lmpFromDue(due)
   const currentWeek = getProgress(due).week
@@ -28,7 +30,10 @@ export default function Agenda() {
 
   return (
     <div className="view">
-      <h1 className="page-title">Schedule</h1>
+      <div className="page-head">
+        <h1 className="page-title">Schedule</h1>
+        <button className="addbtn" onClick={() => setAdding(true)}>+ Add your own</button>
+      </div>
       <div className="chips">
         <button className={'chip' + (filter === 'all' ? ' chip--on' : '')} onClick={() => setFilter('all')}>
           All
@@ -58,6 +63,8 @@ export default function Agenda() {
           </section>
         )
       })}
+
+      {adding && <EventModal onClose={() => setAdding(false)} />}
     </div>
   )
 }

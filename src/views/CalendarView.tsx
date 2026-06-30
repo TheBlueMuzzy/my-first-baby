@@ -6,13 +6,19 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
 import { buildSchedule, DatedItem } from '../lib/schedule'
+import EventModal from '../components/EventModal'
 
 export default function CalendarView() {
   useStoreVersion()
   const navigate = useNavigate()
   const [month, setMonth] = useState(startOfMonth(new Date()))
   const [selected, setSelected] = useState(startOfDay(new Date()))
+  const [adding, setAdding] = useState(false)
   const today = startOfDay(new Date())
+
+  function openItem(d: DatedItem) {
+    navigate(d.isEvent && d.event ? '/event/' + d.event.id : '/task/' + d.item.id)
+  }
 
   const schedule = buildSchedule()
   const byDay = new Map<string, DatedItem[]>()
@@ -68,20 +74,26 @@ export default function CalendarView() {
       </div>
 
       <div className="cal-day">
-        <h2 className="section-title">{format(selected, 'EEEE, MMMM d')}</h2>
+        <div className="page-head">
+          <h2 className="section-title">{format(selected, 'EEEE, MMMM d')}</h2>
+          <button className="addbtn" onClick={() => setAdding(true)}>+ Add</button>
+        </div>
         {selectedItems.length === 0 && <p className="muted">Nothing scheduled.</p>}
         <div className="list">
           {selectedItems.map((d) => (
-            <div key={d.item.id} className="row" onClick={() => navigate('/task/' + d.item.id)}>
+            <div key={d.item.id} className="row" onClick={() => openItem(d)}>
               <span className={'dot dot--' + d.item.category} />
               <div className="row__body">
                 <div className={'row__title' + (d.state.status === 'done' ? ' strike' : '')}>{d.item.title}</div>
               </div>
+              {d.isEvent && <span className="pill pill--mine">yours</span>}
               <span className="row__chev">›</span>
             </div>
           ))}
         </div>
       </div>
+
+      {adding && <EventModal initialDate={format(selected, 'yyyy-MM-dd')} onClose={() => setAdding(false)} />}
     </div>
   )
 }

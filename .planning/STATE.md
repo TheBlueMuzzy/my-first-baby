@@ -74,11 +74,34 @@ ready for Muzzy's real account.
   `workflow` scope (can't push `.github/workflows/`), and the publishable key only needs
   to exist in the built bundle (never in repo source).
 
-## Next (polish, optional)
-1. Real maskable PNG app icons (currently a placeholder SVG).
-2. Drag-to-reschedule on the calendar.
-3. Custom "add your own task/event" — the `events` table + RLS are already built for this.
-4. Consider photo realtime (gallery currently refetches on open/upload/delete, not live).
+## Live usage / real data (do NOT delete)
+- Muzzy created his real account + household **"Away We Go!"** (join code **WEZPYS**,
+  due 2027-02-18) on the live app on 2026-06-29. 1 member, seeded first-visit task.
+  This is real data — never clear it during testing. Use throwaway accounts + clean them up.
+- Onboarding was redesigned (2026-06-29) so both choices show at once with **join-by-code
+  first and prominent** (the old hidden tab let a partner accidentally create a 2nd
+  household). Deployed. Partner joins via: sign up → confirm email → sign in → enter code.
+- Supabase Auth Site URL + Redirect URL set to the Pages URL (email links work). Access
+  token kept active (per Muzzy) so Claude can keep managing the DB; it's not in the repo.
+
+## Done — polish batch 1 (2026-06-30, deployed)
+- **Interaction feel:** press/active feedback on all controls (scale "push"), visible
+  focus rings, gentle screen fade-ins, clear disabled states, prefers-reduced-motion
+  guard, no mobile tap-flash. (`src/index.css`)
+- **Live photos:** Gallery subscribes to realtime `photos` changes per household and
+  refreshes; `photos` added to the `supabase_realtime` publication. (`src/views/Gallery.tsx`)
+- **App icon:** simple cream heart on solid sage (Muzzy's call). Full-bleed PNG set
+  `public/icon-192.png` / `icon-512.png` / `apple-touch-icon.png` + updated `icon.svg`;
+  manifest + index.html wired; fixed deprecated `apple-mobile-web-app-capable` warning.
+  NOTE: phones cache home-screen icons hard — to see the new heart, remove the app from
+  the home screen and re-add it.
+
+## Next (remaining polish)
+1. **Add your own task/event** (BIG, next) — custom appointments/notes, not just the ~40
+   presets. The `events` table + RLS exist. Plan: extend the local-first sync engine in
+   `storage.ts` to cache+sync events like tasks, merge them into `buildSchedule()` so all
+   views show them, add an event detail/edit screen. Keep the synchronous-read architecture.
+2. **Drag-to-reschedule** on the calendar (mobile drag is fiddly — consider long-press).
 
 ## Known small items
 - Current week (6) shows no group in Schedule because the first items start at week 8 — harmless.

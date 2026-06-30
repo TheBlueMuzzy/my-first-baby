@@ -125,6 +125,21 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .pill { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #eef3ef; color: var(--sage-deep); font-weight: 500; }
 .pill--muted { background: var(--line); color: var(--muted); }
 .pill--now { background: var(--sage); color: #fff; }
+.pill--mine { background: #f3ece6; color: var(--amber); }
+
+/* ---------- Page header with an action (Add) ---------- */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.page-head .page-title, .page-head .section-title { margin: 0; }
+.addbtn {
+  flex: none; border: 1px solid var(--sage); background: var(--surface); color: var(--sage-deep);
+  border-radius: 99px; padding: 7px 14px; font-size: 14px; font-weight: 600;
+  transition: transform .09s ease, background-color .15s ease;
+}
+.addbtn:active { transform: scale(0.96); background: #f1f5f1; }
+
+/* ---------- Checkbox row (event form) ---------- */
+.checkrow { display: flex; align-items: center; gap: 10px; font-size: 15px; margin: 12px 2px; color: var(--ink); }
+.checkrow input { width: 20px; height: 20px; accent-color: var(--sage); }
 
 /* ---------- Chips ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }

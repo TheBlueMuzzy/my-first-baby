@@ -6,6 +6,7 @@
 
 import { supabase } from './supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { Category } from '../data/timeline'
 
 export type TaskStatus = 'todo' | 'done' | 'skipped'
 
@@ -15,10 +16,23 @@ export interface TaskState {
   customDate: string | null // ISO date; overrides the suggested window date
 }
 
+/** A user-created item (their own appointment / reminder), as opposed to a preset. */
+export interface CustomEvent {
+  id: string
+  title: string
+  date: string // ISO yyyy-MM-dd
+  notes: string
+  category: Category
+  isAppointment: boolean
+  done: boolean
+}
+
 const KEY = 'mfb.tasks'
+const EVENTS_KEY = 'mfb.events'
 const DUE_KEY = 'mfb.dueDate' // mirror of pregnancy.ts; cloud is the shared source of truth when signed in
 
 type Store = Record<string, TaskState>
+type EventStore = Record<string, CustomEvent>
 
 const listeners = new Set<() => void>()
 let version = 0
@@ -84,6 +98,88 @@ export function subscribe(cb: () => void): () => void {
 }
 
 // =====================================================================
+// Custom events (your own appointments / reminders) — same local-first
+// model as tasks: instant local cache, mirrored to the cloud.
+// =====================================================================
+
+function readEvents(): EventStore {
+  try {
+    return JSON.parse(localStorage.getItem(EVENTS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+function writeEventsLocal(store: EventStore) {
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(store))
+  touch()
+}
+
+export function getEvents(): CustomEvent[] {
+  return Object.values(readEvents())
+}
+
+export function getEvent(id: string): CustomEvent | undefined {
+  return readEvents()[id]
+}
+
+export function addEvent(fields: Omit<CustomEvent, 'id'>): CustomEvent {
+  const ev: CustomEvent = { ...fields, id: crypto.randomUUID() }
+  const store = readEvents()
+  store[ev.id] = ev
+  writeEventsLocal(store)
+  pushEvent(ev)
+  return ev
+}
+
+export function updateEvent(id: string, patch: Partial<Omit<CustomEvent, 'id'>>) {
+  const store = readEvents()
+  const cur = store[id]
+  if (!cur) return
+  const next = { ...cur, ...patch }
+  store[id] = next
+  writeEventsLocal(store)
+  pushEvent(next)
+}
+
+export function deleteEvent(id: string) {
+  const store = readEvents()
+  if (store[id]) {
+    delete store[id]
+    writeEventsLocal(store)
+  }
+  if (supabase && householdId) {
+    supabase
+      .from('events')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('[sync] could not delete event:', error.message)
+      })
+  }
+}
+
+function pushEvent(ev: CustomEvent) {
+  if (!supabase || !householdId) return
+  supabase
+    .from('events')
+    .upsert({
+      id: ev.id,
+      household_id: householdId,
+      title: ev.title,
+      date: ev.date,
+      notes: ev.notes || null,
+      category: ev.category,
+      is_appointment: ev.isAppointment,
+      done: ev.done,
+      updated_at: new Date().toISOString(),
+    })
+    .then(({ error }) => {
+      if (error) console.warn('[sync] could not save event:', error.message)
+    })
+}
+
+// =====================================================================
 // Cloud sync — only active once a household is joined.
 // =====================================================================
 
@@ -137,6 +233,7 @@ export function deactivateSync() {
   householdId = null
   joinCode = null
   localStorage.removeItem(KEY)
+  localStorage.removeItem(EVENTS_KEY)
   localStorage.removeItem(DUE_KEY)
   touch()
 }
@@ -164,6 +261,25 @@ async function hydrate() {
   }
   localStorage.setItem(KEY, JSON.stringify(store))
 
+  // Custom events.
+  const { data: evRows } = await supabase
+    .from('events')
+    .select('id,title,date,notes,category,is_appointment,done')
+    .eq('household_id', householdId)
+  const evStore: EventStore = {}
+  for (const r of evRows ?? []) {
+    evStore[r.id] = {
+      id: r.id,
+      title: r.title,
+      date: r.date,
+      notes: r.notes ?? '',
+      category: r.category as Category,
+      isAppointment: r.is_appointment,
+      done: r.done,
+    }
+  }
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(evStore))
+
   // Shared due date (cloud wins when it has one).
   const { data: h } = await supabase
     .from('households')
@@ -173,6 +289,28 @@ async function hydrate() {
   if (h?.due_date) localStorage.setItem(DUE_KEY, h.due_date)
 
   touch()
+}
+
+function applyEventRow(r: {
+  id: string
+  title: string
+  date: string
+  notes: string | null
+  category: string
+  is_appointment: boolean
+  done: boolean
+}) {
+  const store = readEvents()
+  store[r.id] = {
+    id: r.id,
+    title: r.title,
+    date: r.date,
+    notes: r.notes ?? '',
+    category: r.category as Category,
+    isAppointment: r.is_appointment,
+    done: r.done,
+  }
+  writeEventsLocal(store)
 }
 
 function applyTaskRow(r: { item_id: string; status: string; notes: string | null; custom_date: string | null }) {
@@ -195,6 +333,25 @@ function subscribeRealtime() {
       (payload) => {
         const r = payload.new as any
         if (r && r.item_id) applyTaskRow(r)
+      },
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'events', filter: `household_id=eq.${householdId}` },
+      (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const id = (payload.old as any)?.id
+          if (id) {
+            const s = readEvents()
+            if (s[id]) {
+              delete s[id]
+              writeEventsLocal(s)
+            }
+          }
+        } else {
+          const r = payload.new as any
+          if (r?.id) applyEventRow(r)
+        }
       },
     )
     .on(

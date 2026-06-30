@@ -4,6 +4,7 @@ import CalendarView from './views/CalendarView'
 import Agenda from './views/Agenda'
 import Gallery from './views/Gallery'
 import TaskDetail from './views/TaskDetail'
+import EventDetail from './views/EventDetail'
 import AuthGate from './auth/AuthGate'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
               <Route path="/schedule" element={<Agenda />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/task/:id" element={<TaskDetail />} />
+              <Route path="/event/:id" element={<EventDetail />} />
             </Routes>
           </main>
           <nav className="tabbar">
