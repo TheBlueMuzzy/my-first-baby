@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
-import { getEvent, updateEvent, deleteEvent } from '../lib/storage'
+import { getEvent, updateEvent, deleteEvent, addEvent } from '../lib/storage'
+import { showToast } from '../lib/toast'
 import { Category, CATEGORY_LABEL } from '../data/timeline'
 
 const CATEGORIES: Category[] = ['medical', 'health', 'admin', 'prep', 'partner']
@@ -13,22 +14,37 @@ export default function EventDetail() {
 
   if (!ev) {
     return (
-      <div className="view">
-        <button className="linkbtn linkbtn--dark" onClick={() => navigate(-1)}>‹ Back</button>
+      <div className="view view--fab">
         <p className="muted">That item no longer exists.</p>
+        <button className="fab fab--left fab--back" onClick={() => navigate(-1)} aria-label="Back">‹</button>
       </div>
     )
   }
 
+  const current = ev
+
   function remove() {
     deleteEvent(id)
+    showToast('Event deleted', () =>
+      addEvent({
+        title: current.title,
+        date: current.date,
+        notes: current.notes,
+        category: current.category,
+        isAppointment: current.isAppointment,
+        done: current.done,
+      }),
+    )
     navigate(-1)
   }
 
-  return (
-    <div className="view">
-      <button className="linkbtn linkbtn--dark" onClick={() => navigate(-1)}>‹ Back</button>
+  function toggleDone() {
+    updateEvent(id, { done: !current.done })
+    showToast(current.done ? 'Marked not done' : 'Marked done', () => updateEvent(id, { done: current.done }))
+  }
 
+  return (
+    <div className="view view--fab">
       <div className="detail-head">
         <span className={'dot dot--' + ev.category} />
         <span className="muted small">{CATEGORY_LABEL[ev.category]}</span>
@@ -37,10 +53,7 @@ export default function EventDetail() {
       </div>
 
       <div className="actions">
-        <button
-          className={'btn' + (ev.done ? ' btn--on' : '')}
-          onClick={() => updateEvent(id, { done: !ev.done })}
-        >
+        <button className={'btn' + (ev.done ? ' btn--on' : '')} onClick={toggleDone}>
           {ev.done ? '✓ Done' : 'Mark done'}
         </button>
         <button className="btn" onClick={remove}>
@@ -83,6 +96,8 @@ export default function EventDetail() {
           placeholder="Anything to remember…"
         />
       </div>
+
+      <button className="fab fab--left fab--back" onClick={() => navigate(-1)} aria-label="Back">‹</button>
     </div>
   )
 }

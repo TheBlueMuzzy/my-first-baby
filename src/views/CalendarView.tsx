@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
 import { buildSchedule, DatedItem } from '../lib/schedule'
 import { setTaskState, updateEvent } from '../lib/storage'
+import { showToast } from '../lib/toast'
 import EventModal from '../components/EventModal'
 
 export default function CalendarView() {
@@ -47,10 +48,17 @@ export default function CalendarView() {
   function moveTo(day: Date) {
     if (!moving) return
     const iso = format(day, 'yyyy-MM-dd')
+    const label = `Moved to ${format(day, 'MMM d')}`
     if (moving.isEvent && moving.event) {
-      updateEvent(moving.event.id, { date: iso })
+      const id = moving.event.id
+      const prev = moving.event.date
+      updateEvent(id, { date: iso })
+      showToast(label, () => updateEvent(id, { date: prev }))
     } else {
-      setTaskState(moving.item.id, { customDate: iso })
+      const itemId = moving.item.id
+      const prev = moving.state.customDate
+      setTaskState(itemId, { customDate: iso })
+      showToast(label, () => setTaskState(itemId, { customDate: prev }))
     }
     setSelected(startOfDay(day))
     setMoving(null)
@@ -82,11 +90,7 @@ export default function CalendarView() {
         </div>
       )}
 
-      <div className="cal-head">
-        <button className="navbtn" onClick={() => setMonth(addMonths(month, -1))}>‹</button>
-        <h1 className="page-title">{format(month, 'MMMM yyyy')}</h1>
-        <button className="navbtn" onClick={() => setMonth(addMonths(month, 1))}>›</button>
-      </div>
+      <h1 className="page-title cal-title">{format(month, 'MMMM yyyy')}</h1>
 
       <div className="cal-grid cal-grid--head">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
@@ -152,6 +156,13 @@ export default function CalendarView() {
       </div>
 
       {adding && <EventModal initialDate={format(selected, 'yyyy-MM-dd')} onClose={() => setAdding(false)} />}
+
+      <button className="fab fab--left" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month">
+        ‹
+      </button>
+      <button className="fab fab--right" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month">
+        ›
+      </button>
     </div>
   )
 }

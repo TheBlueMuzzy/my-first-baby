@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { DatedItem } from '../lib/schedule'
 import { setTaskState, updateEvent } from '../lib/storage'
+import { showToast } from '../lib/toast'
 
 export default function TaskRow({ d, showDate = true }: { d: DatedItem; showDate?: boolean }) {
   const navigate = useNavigate()
@@ -15,10 +16,15 @@ export default function TaskRow({ d, showDate = true }: { d: DatedItem; showDate
 
   function toggle(e: React.MouseEvent) {
     e.stopPropagation()
+    const label = done ? 'Marked not done' : 'Marked done'
     if (d.isEvent && d.event) {
-      updateEvent(d.event.id, { done: !done })
+      const id = d.event.id
+      updateEvent(id, { done: !done })
+      showToast(label, () => updateEvent(id, { done }))
     } else {
+      const prev = state.status
       setTaskState(item.id, { status: done ? 'todo' : 'done' })
+      showToast(label, () => setTaskState(item.id, { status: prev }))
     }
   }
 

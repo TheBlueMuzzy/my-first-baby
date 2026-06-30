@@ -7,6 +7,7 @@ import Gallery from './views/Gallery'
 import TaskDetail from './views/TaskDetail'
 import EventDetail from './views/EventDetail'
 import Account from './views/Account'
+import Toaster from './components/Toaster'
 import AuthGate from './auth/AuthGate'
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
             <Tab to="/gallery" label="Gallery" icon="❏" />
             <Tab to="/account" label="Account" icon={<PersonIcon />} />
           </nav>
+          <Toaster />
         </div>
       </HashRouter>
     </AuthGate>

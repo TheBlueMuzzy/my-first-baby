@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import {
-  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
+  DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
   MeasuringStrategy, DragStartEvent, DragEndEvent,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
@@ -9,6 +9,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useStoreVersion } from '../lib/useStore'
 import { buildSchedule, DatedItem } from '../lib/schedule'
 import { setTaskState, updateEvent } from '../lib/storage'
+import { showToast } from '../lib/toast'
 import { getDueDate, lmpFromDue, getProgress, dateForWeek } from '../lib/pregnancy'
 import { Category, CATEGORY_LABEL } from '../data/timeline'
 import TaskRow from '../components/TaskRow'
@@ -22,7 +23,6 @@ export default function Agenda() {
   useStoreVersion()
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [adding, setAdding] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
 
   const due = getDueDate()
   const lmp = lmpFromDue(due)
@@ -47,7 +47,6 @@ export default function Agenda() {
   }
   const itemIds = schedule.map((d) => d.item.id)
   const byId = new Map(schedule.map((d) => [d.item.id, d]))
-  const activeItem = activeId ? byId.get(activeId) : null
 
   // Long-press (hold ~220ms) to pick up; a quick tap still opens/checks the item.
   const sensors = useSensors(
@@ -55,24 +54,27 @@ export default function Agenda() {
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
   )
 
-  function onDragStart(e: DragStartEvent) {
-    setActiveId(String(e.active.id))
+  function onDragStart(_e: DragStartEvent) {
     if (navigator.vibrate) navigator.vibrate(15)
   }
 
   function onDragEnd(e: DragEndEvent) {
-    setActiveId(null)
     const { active, over } = e
     if (!over || active.id === over.id) return
     const moved = byId.get(String(active.id))
     const target = byId.get(String(over.id))
     if (!moved || !target) return
-    // Reschedule to the day it landed on.
+
+    // Reschedule to the day it landed on, with an Undo that restores the old date.
     const iso = format(target.date, 'yyyy-MM-dd')
     if (moved.isEvent && moved.event) {
+      const prev = moved.event.date
       updateEvent(moved.event.id, { date: iso })
+      showToast(`Moved to ${format(target.date, 'MMM d')}`, () => updateEvent(moved.event!.id, { date: prev }))
     } else {
+      const prev = moved.state.customDate
       setTaskState(moved.item.id, { customDate: iso })
+      showToast(`Moved to ${format(target.date, 'MMM d')}`, () => setTaskState(moved.item.id, { customDate: prev }))
     }
   }
 
@@ -101,7 +103,6 @@ export default function Agenda() {
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
-        onDragCancel={() => setActiveId(null)}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
           {rows.map((row) =>
@@ -112,16 +113,6 @@ export default function Agenda() {
             ),
           )}
         </SortableContext>
-        <DragOverlay>
-          {activeItem ? (
-            <div className="row row--overlay">
-              <span className={'dot dot--' + activeItem.item.category} />
-              <div className="row__body">
-                <div className="row__title">{activeItem.item.title}</div>
-              </div>
-            </div>
-          ) : null}
-        </DragOverlay>
       </DndContext>
 
       {adding && <EventModal onClose={() => setAdding(false)} />}
@@ -141,14 +132,20 @@ function WeekHeader({ wk, date, isCurrent }: { wk: number; date: Date; isCurrent
 
 function SortableRow({ d }: { d: DatedItem }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: d.item.id })
-  const style = { transform: CSS.Transform.toString(transform), transition }
-
-  // While lifted, leave a dashed placeholder gap where the card came from / will land.
-  if (isDragging) {
-    return <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="row row--placeholder" />
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 30 : undefined,
+    position: 'relative' as const,
   }
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="sortable-row">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={'sortable-row' + (isDragging ? ' sortable-row--dragging' : '')}
+    >
       <TaskRow d={d} />
     </div>
   )

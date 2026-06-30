@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { useStoreVersion } from '../lib/useStore'
 import { itemById, CATEGORY_LABEL } from '../data/timeline'
 import { getTaskState, setTaskState } from '../lib/storage'
+import { showToast } from '../lib/toast'
 import { getDueDate, dateForWeek } from '../lib/pregnancy'
 
 export default function TaskDetail() {
@@ -14,8 +15,8 @@ export default function TaskDetail() {
   if (!item) {
     return (
       <div className="view">
-        <button className="linkbtn" onClick={() => navigate(-1)}>‹ Back</button>
         <p className="muted">That item no longer exists.</p>
+        <BackFab onBack={() => navigate(-1)} />
       </div>
     )
   }
@@ -25,10 +26,14 @@ export default function TaskDetail() {
   const suggested = dateForWeek(due, item.weekStart)
   const effective = state.customDate ? parseISO(state.customDate) : suggested
 
-  return (
-    <div className="view">
-      <button className="linkbtn" onClick={() => navigate(-1)}>‹ Back</button>
+  function setStatus(next: 'todo' | 'done' | 'skipped', undoLabel: string) {
+    const prev = state.status
+    setTaskState(id, { status: next })
+    showToast(undoLabel, () => setTaskState(id, { status: prev }))
+  }
 
+  return (
+    <div className="view view--fab">
       <div className="detail-head">
         <span className={'dot dot--' + item.category} />
         <span className="muted small">{CATEGORY_LABEL[item.category]}</span>
@@ -48,13 +53,17 @@ export default function TaskDetail() {
       <div className="actions">
         <button
           className={'btn' + (state.status === 'done' ? ' btn--on' : '')}
-          onClick={() => setTaskState(id, { status: state.status === 'done' ? 'todo' : 'done' })}
+          onClick={() =>
+            setStatus(state.status === 'done' ? 'todo' : 'done', state.status === 'done' ? 'Marked not done' : 'Marked done')
+          }
         >
           {state.status === 'done' ? '✓ Done' : 'Mark done'}
         </button>
         <button
           className={'btn' + (state.status === 'skipped' ? ' btn--on' : '')}
-          onClick={() => setTaskState(id, { status: state.status === 'skipped' ? 'todo' : 'skipped' })}
+          onClick={() =>
+            setStatus(state.status === 'skipped' ? 'todo' : 'skipped', state.status === 'skipped' ? 'Un-skipped' : 'Skipped')
+          }
         >
           {state.status === 'skipped' ? 'Skipped (N/A)' : 'Skip (N/A)'}
         </button>
@@ -84,7 +93,15 @@ export default function TaskDetail() {
         />
       </div>
 
-      <p className="muted small">Photos for this item turn on with the gallery in the next step.</p>
+      <BackFab onBack={() => navigate(-1)} />
     </div>
+  )
+}
+
+function BackFab({ onBack }: { onBack: () => void }) {
+  return (
+    <button className="fab fab--left fab--back" onClick={onBack} aria-label="Back">
+      ‹
+    </button>
   )
 }

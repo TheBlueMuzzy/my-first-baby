@@ -16,8 +16,7 @@ export default function Account() {
   }, [])
 
   return (
-    <div className="view">
-      <button className="linkbtn linkbtn--dark" onClick={() => navigate(-1)}>‹ Back</button>
+    <div className="view view--fab">
       <h1 className="page-title">Account</h1>
 
       <section className="card">
@@ -42,6 +41,8 @@ export default function Account() {
       <button className="btn auth__submit" onClick={() => signOut()}>
         Sign out
       </button>
+
+      <button className="fab fab--left fab--back" onClick={() => navigate(-1)} aria-label="Back">‹</button>
     </div>
   )
 }
