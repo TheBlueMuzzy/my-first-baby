@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, format, startOfDay,
@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
 import { buildSchedule, DatedItem } from '../lib/schedule'
+import { setTaskState, updateEvent } from '../lib/storage'
 import EventModal from '../components/EventModal'
 
 export default function CalendarView() {
@@ -14,10 +15,45 @@ export default function CalendarView() {
   const [month, setMonth] = useState(startOfMonth(new Date()))
   const [selected, setSelected] = useState(startOfDay(new Date()))
   const [adding, setAdding] = useState(false)
+  const [moving, setMoving] = useState<DatedItem | null>(null)
   const today = startOfDay(new Date())
 
-  function openItem(d: DatedItem) {
+  // Long-press to "pick up" an item, then tap a day to move it there.
+  const pressTimer = useRef<number | null>(null)
+  const longPressed = useRef(false)
+
+  function startPress(d: DatedItem) {
+    longPressed.current = false
+    pressTimer.current = window.setTimeout(() => {
+      longPressed.current = true
+      setMoving(d)
+      if (navigator.vibrate) navigator.vibrate(15)
+    }, 450)
+  }
+  function cancelPress() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+  function rowClick(d: DatedItem) {
+    if (longPressed.current) {
+      longPressed.current = false
+      return // the long-press already picked it up; don't open it
+    }
     navigate(d.isEvent && d.event ? '/event/' + d.event.id : '/task/' + d.item.id)
+  }
+
+  function moveTo(day: Date) {
+    if (!moving) return
+    const iso = format(day, 'yyyy-MM-dd')
+    if (moving.isEvent && moving.event) {
+      updateEvent(moving.event.id, { date: iso })
+    } else {
+      setTaskState(moving.item.id, { customDate: iso })
+    }
+    setSelected(startOfDay(day))
+    setMoving(null)
   }
 
   const schedule = buildSchedule()
@@ -35,6 +71,17 @@ export default function CalendarView() {
 
   return (
     <div className="view">
+      {moving && (
+        <div className="move-banner">
+          <span>
+            Moving <strong>{moving.item.title}</strong> — tap a day
+          </span>
+          <button className="move-banner__cancel" onClick={() => setMoving(null)}>
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div className="cal-head">
         <button className="navbtn" onClick={() => setMonth(addMonths(month, -1))}>‹</button>
         <h1 className="page-title">{format(month, 'MMMM yyyy')}</h1>
@@ -47,7 +94,7 @@ export default function CalendarView() {
         ))}
       </div>
 
-      <div className="cal-grid">
+      <div className={'cal-grid' + (moving ? ' cal-grid--moving' : '')}>
         {days.map((day) => {
           const items = byDay.get(format(day, 'yyyy-MM-dd')) || []
           const muted = !isSameMonth(day, month)
@@ -60,7 +107,7 @@ export default function CalendarView() {
                 (isSameDay(day, selected) ? ' cal-cell--sel' : '') +
                 (isSameDay(day, today) ? ' cal-cell--today' : '')
               }
-              onClick={() => setSelected(startOfDay(day))}
+              onClick={() => (moving ? moveTo(day) : setSelected(startOfDay(day)))}
             >
               <span className="cal-num">{format(day, 'd')}</span>
               <span className="cal-dots">
@@ -79,9 +126,20 @@ export default function CalendarView() {
           <button className="addbtn" onClick={() => setAdding(true)}>+ Add</button>
         </div>
         {selectedItems.length === 0 && <p className="muted">Nothing scheduled.</p>}
+        {selectedItems.length > 0 && !moving && (
+          <p className="muted small cal-hint">Press and hold an item to move it to another day.</p>
+        )}
         <div className="list">
           {selectedItems.map((d) => (
-            <div key={d.item.id} className="row" onClick={() => openItem(d)}>
+            <div
+              key={d.item.id}
+              className={'row' + (moving && moving.item.id === d.item.id ? ' row--lifted' : '')}
+              onClick={() => rowClick(d)}
+              onPointerDown={() => startPress(d)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerMove={cancelPress}
+            >
               <span className={'dot dot--' + d.item.category} />
               <div className="row__body">
                 <div className={'row__title' + (d.state.status === 'done' ? ' strike' : '')}>{d.item.title}</div>

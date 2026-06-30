@@ -174,6 +174,24 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .cal-num { font-size: 14px; }
 .cal-dots { display: flex; gap: 2px; min-height: 9px; }
 .cal-day { margin-top: 20px; }
+.cal-hint { margin: 0 0 10px; }
+
+/* Long-press "move" mode */
+.move-banner {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--sage-deep); color: #fff;
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px;
+  box-shadow: 0 4px 14px rgba(95, 124, 105, 0.35);
+}
+.move-banner strong { font-weight: 600; }
+.move-banner__cancel {
+  flex: none; background: rgba(255,255,255,0.2); color: #fff;
+  border: none; border-radius: 99px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+}
+.cal-grid--moving .cal-cell { border-color: var(--sage); border-style: dashed; }
+.cal-grid--moving .cal-cell:active { background: var(--sage); color: #fff; }
+.row--lifted { border-color: var(--sage); background: #eef3ef; box-shadow: 0 2px 10px rgba(95,124,105,0.2); }
 
 /* ---------- Detail ---------- */
 .detail-head { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
