@@ -154,6 +154,17 @@ interaction feel, live photos, heart icon, add-your-own task/event, long-press r
 - Verified: Schedule renders, tap-to-open still works, 0 errors. The drag gesture itself
   is best tested on a touch device (not exercised on Muzzy's live data).
 
+## Known issue being fixed — Schedule drag jump after scroll (2026-06-30)
+- Symptom (Muzzy, on device): after scrolling the Schedule, starting a long-press drag made
+  the card "fly" toward the top of the list.
+- Cause: Schedule scrolls inside `.content` (custom scroll container); dnd-kit used cached
+  pre-scroll droppable rects.
+- Fix applied: `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}` on
+  DndContext. Deployed; **awaiting Muzzy's on-device confirmation.**
+- If it persists, fallback: make the WINDOW the scroll container (remove `overflow-y:auto`
+  from `.content`, let body scroll; keep the fixed tabbar) — dnd-kit handles window scroll
+  natively. That's a small layout change to try next.
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
