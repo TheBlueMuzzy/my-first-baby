@@ -1,4 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#7c9885"/>
-  <path fill="#faf8f5" d="M256 392c-8 0-16-3-22-9l-110-110c-34-34-34-90 0-124 32-32 84-34 118-5 34-29 86-27 118 5 34 34 34 90 0 124L278 383c-6 6-14 9-22 9z"/>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Full-bleed sage background → reads as a circle once the home screen masks it. -->
+  <rect width="512" height="512" fill="#7c9885"/>
+  <!-- Centered cream heart. -->
+  <path fill="#faf8f5" d="M256 358
+    C 256 358 150 286 150 230
+    C 150 196 178 174 210 174
+    C 234 174 250 190 256 204
+    C 262 190 278 174 302 174
+    C 334 174 362 196 362 230
+    C 362 286 256 358 256 358 Z"/>
 </svg>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { syncEnabled } from '../lib/supabase'
+import { supabase, syncEnabled } from '../lib/supabase'
+import { getHouseholdId } from '../lib/storage'
 import {
   Photo,
   PhotoTag,
@@ -34,6 +35,22 @@ export default function Gallery() {
 
   useEffect(() => {
     refresh()
+
+    // Live updates: when your partner adds/edits/removes a photo, refresh the grid.
+    const sb = supabase
+    const hid = getHouseholdId()
+    if (!sb || !hid) return
+    const channel = sb
+      .channel('gallery-' + hid)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'photos', filter: `household_id=eq.${hid}` },
+        () => refresh(),
+      )
+      .subscribe()
+    return () => {
+      sb.removeChannel(channel)
+    }
   }, [])
 
   // Local-only mode (no account): gallery needs the cloud, so explain that.

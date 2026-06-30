@@ -28,6 +28,14 @@ body {
 
 button { font-family: inherit; cursor: pointer; }
 
+/* Interactive elements: no blue tap flash, no accidental text-select, app-like feel. */
+button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
 .app { min-height: 100%; display: flex; flex-direction: column; }
 
 .content {
@@ -217,6 +225,55 @@ button { font-family: inherit; cursor: pointer; }
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
 }
 .linkbtn--dark { color: var(--sage-deep); opacity: 1; margin-top: 6px; }
+
+/* ---------- Interaction polish ---------- */
+/* Everything that can be pressed gets a quick, consistent tactile response. */
+.btn, .chip, .navbtn, .emergency-btn, .check, .modal__close, .tab, .auth__submit {
+  transition: transform .09s ease, background-color .15s ease, border-color .15s ease,
+              color .15s ease, opacity .15s ease, box-shadow .15s ease;
+}
+.row, .cal-cell, .photo-cell {
+  transition: transform .09s ease, background-color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+/* Press: a small "push" so taps feel acknowledged. */
+.btn:active, .chip:active, .navbtn:active, .emergency-btn:active,
+.modal__close:active, .auth__submit:active { transform: scale(0.97); }
+.row:active, .cal-cell:active, .photo-cell:active { transform: scale(0.985); }
+.check:active { transform: scale(0.88); }
+.linkbtn:active { opacity: 0.6; }
+.tab:active .tab__icon { transform: scale(0.88); transition: transform .09s ease; }
+
+/* Pressed list rows/cells get a soft tint so the touch lands somewhere. */
+.row:active { background: #f4f1ec; }
+.cal-cell:active:not(.cal-cell--sel) { background: #f1f5f1; }
+
+/* Disabled buttons read clearly as unavailable. */
+.btn:disabled, .auth__submit:disabled, .chip:disabled {
+  opacity: 0.45; cursor: not-allowed; transform: none;
+}
+
+/* Keyboard focus is visible (accessibility) without showing on mouse/touch taps. */
+:focus-visible { outline: 2px solid var(--sage-deep); outline-offset: 2px; border-radius: 6px; }
+.tab:focus-visible, .linkbtn:focus-visible { outline-offset: 1px; }
+
+/* New screens ease in gently. */
+.view, .auth { animation: fade-in .22s ease both; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Progress bar and check fills animate smoothly. */
+.check { transition: background-color .18s ease, border-color .18s ease, transform .09s ease; }
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:active, .chip:active, .row:active, .cal-cell:active, .photo-cell:active,
+  .check:active, .navbtn:active, .emergency-btn:active { transform: none; }
+}
 
 /* ---------- Utility ---------- */
 .muted { color: var(--muted); }
