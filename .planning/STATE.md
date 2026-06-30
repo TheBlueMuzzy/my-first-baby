@@ -96,12 +96,32 @@ ready for Muzzy's real account.
   NOTE: phones cache home-screen icons hard — to see the new heart, remove the app from
   the home screen and re-add it.
 
+## Done — add your own task/event (2026-06-30, deployed)
+- `events` table extended (category/is_appointment/done/updated_at) + added to realtime.
+- `storage.ts` caches + syncs events exactly like tasks (addEvent/updateEvent/deleteEvent,
+  getEvents/getEvent, hydrate, realtime, push). `schedule.ts` merges events into
+  `buildSchedule()` as DatedItems (`isEvent`/`event`) so they show across Today/Calendar/
+  Schedule. New `EventModal` (quick add from Schedule "+ Add your own" and Calendar
+  "+ Add" on a day) and `EventDetail` (/event/:id) editor; "yours" pill marks custom items.
+- Verified UI renders + validates with 0 errors (in Muzzy's real session, no data written).
+  The create/edit/delete+sync path mirrors the verified task-sync path. Final write
+  round-trip left for Muzzy to confirm in real use (didn't want to write to his household).
+
+## Testing notes (IMPORTANT for future sessions)
+- The Playwright browser is signed in as Muzzy's REAL account **joebrogno@gmail.com**
+  (household "Away We Go!", code WEZPYS). Do NOT add/edit/delete in this session — it's
+  real data. For UI tests, sign out + use a throwaway account and clean it up, or verify
+  read-only / cancel-without-saving.
+- To make a confirmed throwaway auth user via SQL: insert into `auth.users` with
+  `email_confirmed_at=now()` AND set the token columns (`confirmation_token`,
+  `recovery_token`, `email_change`, `email_change_token_new`, `email_change_token_current`,
+  `phone_change`, `phone_change_token`, `reauthentication_token`) to '' (NULL → GoTrue 500),
+  password via `extensions.crypt(pw, extensions.gen_salt('bf'))`, plus an `auth.identities`
+  row. Delete the user afterward.
+
 ## Next (remaining polish)
-1. **Add your own task/event** (BIG, next) — custom appointments/notes, not just the ~40
-   presets. The `events` table + RLS exist. Plan: extend the local-first sync engine in
-   `storage.ts` to cache+sync events like tasks, merge them into `buildSchedule()` so all
-   views show them, add an event detail/edit screen. Keep the synchronous-read architecture.
-2. **Drag-to-reschedule** on the calendar (mobile drag is fiddly — consider long-press).
+1. **Drag-to-reschedule** on the calendar (mobile drag is fiddly — consider long-press,
+   or a simpler "move to selected day" action). Last item on Muzzy's polish list.
 
 ## Known small items
 - Current week (6) shows no group in Schedule because the first items start at week 8 — harmless.
