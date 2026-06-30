@@ -158,10 +158,23 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 
 /* ---------- Week groups (agenda) ---------- */
 .weekgroup { margin-bottom: 20px; }
-.weekgroup__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.weekgroup__head { display: flex; align-items: center; gap: 8px; margin: 20px 0 8px; }
 .weekgroup__num { font-weight: 700; font-size: 16px; }
 .weekgroup--current .weekgroup__num { color: var(--sage-deep); }
+.weekgroup__head--current .weekgroup__num { color: var(--sage-deep); }
 .weekgroup--current { background: #f1f5f1; border-radius: var(--radius); padding: 12px; margin-left: -12px; margin-right: -12px; }
+
+/* ---------- Schedule drag-and-drop ---------- */
+.sortable-row { margin-bottom: 8px; }
+.row--placeholder {
+  margin-bottom: 8px; min-height: 66px;
+  border: 2px dashed var(--sage); background: transparent; border-radius: 12px;
+}
+.row--overlay {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.20); transform: rotate(2.5deg); cursor: grabbing;
+}
 
 /* ---------- Calendar ---------- */
 .cal-head { display: flex; align-items: center; justify-content: space-between; }
