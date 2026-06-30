@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { getJoinCode } from '../lib/storage'
+import { getJoinCode, resetSchedule } from '../lib/storage'
 import { signOut } from '../auth/AuthGate'
 
 type Msg = { ok: boolean; text: string } | null
@@ -37,11 +37,66 @@ export default function Account() {
 
       <ChangePassword email={email} />
       <ChangeEmail currentEmail={email} />
+      <ResetSchedule />
 
       <button className="btn auth__submit" onClick={() => signOut()}>
         Sign out
       </button>
     </div>
+  )
+}
+
+function ResetSchedule() {
+  const [confirming, setConfirming] = useState(false)
+  const [clearEvents, setClearEvents] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<Msg>(null)
+
+  async function doReset() {
+    setBusy(true)
+    setMsg(null)
+    try {
+      await resetSchedule({ clearEvents })
+      setMsg({ ok: true, text: 'Schedule reset to the recommended plan.' })
+      setConfirming(false)
+      setClearEvents(false)
+    } catch (err: any) {
+      setMsg({ ok: false, text: err?.message ?? 'Could not reset.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card">
+      <div className="card__label">Reset schedule</div>
+      <p className="muted small">
+        Puts every milestone back to its recommended date and clears your check-offs, moves, and notes (your real
+        first appointment on July 13 stays pinned). Photos and your account aren't touched.
+      </p>
+      {!confirming ? (
+        <button className="btn" onClick={() => { setConfirming(true); setMsg(null) }}>
+          Reset to recommended…
+        </button>
+      ) : (
+        <>
+          <label className="checkrow">
+            <input type="checkbox" checked={clearEvents} onChange={(e) => setClearEvents(e.target.checked)} />
+            Also delete the events I added myself
+          </label>
+          <p className="auth__msg">This can't be undone. Reset the schedule?</p>
+          <div className="actions">
+            <button className="btn btn--on" disabled={busy} onClick={doReset}>
+              {busy ? 'Resetting…' : 'Yes, reset'}
+            </button>
+            <button className="btn" disabled={busy} onClick={() => setConfirming(false)}>
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
+      {msg && <p className={msg.ok ? 'auth__msg auth__msg--ok' : 'auth__msg'}>{msg.text}</p>}
+    </section>
   )
 }
 

@@ -373,6 +373,22 @@ export function seedHousehold() {
   setTaskState('first-visit', { customDate: '2026-07-13' })
 }
 
+/**
+ * Reset the milestone schedule to its recommended state: clears every preset's
+ * moved date, check-off, and notes, then re-pins the known first appointment.
+ * Optionally also deletes the events you added yourself. Photos & account untouched.
+ */
+export async function resetSchedule(opts: { clearEvents: boolean }) {
+  if (supabase && householdId) {
+    await supabase.from('tasks').delete().eq('household_id', householdId)
+    if (opts.clearEvents) await supabase.from('events').delete().eq('household_id', householdId)
+  }
+  localStorage.removeItem(KEY)
+  if (opts.clearEvents) localStorage.removeItem(EVENTS_KEY)
+  touch()
+  seedHousehold() // re-pin the first prenatal visit (July 13)
+}
+
 /** Local-only seed, used when Supabase isn't configured (offline / no account). */
 export function seedOnce() {
   if (localStorage.getItem('mfb.seeded')) return
