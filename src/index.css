@@ -347,9 +347,10 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 :focus-visible { outline: 2px solid var(--sage-deep); outline-offset: 2px; border-radius: 6px; }
 .tab:focus-visible, .linkbtn:focus-visible { outline-offset: 1px; }
 
-/* New screens ease in gently. */
+/* New screens ease in gently. Opacity-only — a transform here would create a
+   containing block and break position:fixed for the floating bottom buttons. */
 .view, .auth { animation: fade-in .22s ease both; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* Progress bar and check fills animate smoothly. */
 .check { transition: background-color .18s ease, border-color .18s ease, transform .09s ease; }

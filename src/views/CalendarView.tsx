@@ -78,7 +78,7 @@ export default function CalendarView() {
   const selectedItems = byDay.get(format(selected, 'yyyy-MM-dd')) || []
 
   return (
-    <div className="view">
+    <div className="view view--fab">
       {moving && (
         <div className="move-banner">
           <span>
