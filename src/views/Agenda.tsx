@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import {
-  DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
+  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
   MeasuringStrategy, DragStartEvent, DragEndEvent,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
@@ -23,6 +23,7 @@ export default function Agenda() {
   useStoreVersion()
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [adding, setAdding] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const due = getDueDate()
   const lmp = lmpFromDue(due)
@@ -47,6 +48,7 @@ export default function Agenda() {
   }
   const itemIds = schedule.map((d) => d.item.id)
   const byId = new Map(schedule.map((d) => [d.item.id, d]))
+  const activeItem = activeId ? byId.get(activeId) : null
 
   // Long-press (hold ~220ms) to pick up; a quick tap still opens/checks the item.
   const sensors = useSensors(
@@ -54,11 +56,13 @@ export default function Agenda() {
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
   )
 
-  function onDragStart(_e: DragStartEvent) {
+  function onDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id))
     if (navigator.vibrate) navigator.vibrate(15)
   }
 
   function onDragEnd(e: DragEndEvent) {
+    setActiveId(null)
     const { active, over } = e
     if (!over || active.id === over.id) return
     const moved = byId.get(String(active.id))
@@ -103,6 +107,7 @@ export default function Agenda() {
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveId(null)}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
           {rows.map((row) =>
@@ -113,6 +118,16 @@ export default function Agenda() {
             ),
           )}
         </SortableContext>
+        <DragOverlay>
+          {activeItem ? (
+            <div className="row row--overlay">
+              <span className={'dot dot--' + activeItem.item.category} />
+              <div className="row__body">
+                <div className="row__title">{activeItem.item.title}</div>
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {adding && <EventModal onClose={() => setAdding(false)} />}
@@ -132,20 +147,15 @@ function WeekHeader({ wk, date, isCurrent }: { wk: number; date: Date; isCurrent
 
 function SortableRow({ d }: { d: DatedItem }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: d.item.id })
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 30 : undefined,
-    position: 'relative' as const,
+  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  // While lifted, the floating overlay shows the (tilted) card; the source slot
+  // becomes a dashed placeholder that slides to where the card will drop.
+  if (isDragging) {
+    return <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="row--placeholder" />
   }
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={'sortable-row' + (isDragging ? ' sortable-row--dragging' : '')}
-    >
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="sortable-row">
       <TaskRow d={d} />
     </div>
   )

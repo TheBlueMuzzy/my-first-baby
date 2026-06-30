@@ -172,13 +172,17 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .weekgroup--current { background: #f1f5f1; border-radius: var(--radius); padding: 12px; margin-left: -12px; margin-right: -12px; }
 
 /* ---------- Schedule drag-and-drop ---------- */
-/* The dragged card lifts in place and moves with the finger (no detached overlay,
-   so it can never jump out of the column). Other cards shift to open the drop gap. */
+/* A floating tilted card follows the finger; the source slot turns into a dashed
+   placeholder that slides to where the card will drop, opening a gap. */
 .sortable-row { margin-bottom: 8px; }
-.sortable-row--dragging .row {
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
-  transform: rotate(1.4deg) scale(1.02);
-  border-color: var(--sage);
+.row--placeholder {
+  margin-bottom: 8px; min-height: 66px;
+  border: 2px dashed var(--sage); background: #f1f5f1; border-radius: 12px;
+}
+.row--overlay {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22); transform: rotate(2.5deg); cursor: grabbing;
 }
 
 /* ---------- Floating bottom controls (thumb zone) ---------- */
@@ -231,6 +235,17 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .cal-dots { display: flex; gap: 2px; min-height: 9px; }
 .cal-day { margin-top: 20px; }
 .cal-hint { margin: 0 0 10px; }
+
+/* Continuous vertical months */
+.cal-month { margin-bottom: 26px; }
+.cal-month__title { font-size: 18px; font-weight: 700; margin: 0 0 10px; text-align: center; }
+.cal-expand {
+  background: #f6f4f0; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px; margin: 6px 0 4px;
+  animation: cal-expand-in .18s ease both;
+}
+.cal-expand .page-head { margin-bottom: 8px; }
+@keyframes cal-expand-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* Long-press "move" mode */
 .move-banner {

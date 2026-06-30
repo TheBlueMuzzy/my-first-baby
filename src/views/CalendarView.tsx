@@ -6,20 +6,26 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
 import { buildSchedule, DatedItem } from '../lib/schedule'
+import { getDueDate } from '../lib/pregnancy'
 import { setTaskState, updateEvent } from '../lib/storage'
 import { showToast } from '../lib/toast'
 import EventModal from '../components/EventModal'
 
+const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+function key(d: Date) {
+  return format(d, 'yyyy-MM-dd')
+}
+
 export default function CalendarView() {
   useStoreVersion()
   const navigate = useNavigate()
-  const [month, setMonth] = useState(startOfMonth(new Date()))
-  const [selected, setSelected] = useState(startOfDay(new Date()))
+  const today = startOfDay(new Date())
+  const [selected, setSelected] = useState<Date | null>(today)
   const [adding, setAdding] = useState(false)
   const [moving, setMoving] = useState<DatedItem | null>(null)
-  const today = startOfDay(new Date())
 
-  // Long-press to "pick up" an item, then tap a day to move it there.
+  // Long-press to "pick up" an item, then tap a day to drop it there.
   const pressTimer = useRef<number | null>(null)
   const longPressed = useRef(false)
 
@@ -37,23 +43,23 @@ export default function CalendarView() {
       pressTimer.current = null
     }
   }
-  function rowClick(d: DatedItem) {
+  function openItem(d: DatedItem) {
     if (longPressed.current) {
       longPressed.current = false
-      return // the long-press already picked it up; don't open it
+      return
     }
     navigate(d.isEvent && d.event ? '/event/' + d.event.id : '/task/' + d.item.id)
   }
 
   function moveTo(day: Date) {
     if (!moving) return
-    const iso = format(day, 'yyyy-MM-dd')
+    const iso = key(day)
     const label = `Moved to ${format(day, 'MMM d')}`
     if (moving.isEvent && moving.event) {
-      const id = moving.event.id
+      const eid = moving.event.id
       const prev = moving.event.date
-      updateEvent(id, { date: iso })
-      showToast(label, () => updateEvent(id, { date: prev }))
+      updateEvent(eid, { date: iso })
+      showToast(label, () => updateEvent(eid, { date: prev }))
     } else {
       const itemId = moving.item.id
       const prev = moving.state.customDate
@@ -64,21 +70,37 @@ export default function CalendarView() {
     setMoving(null)
   }
 
+  function onDayClick(day: Date) {
+    if (moving) {
+      moveTo(day)
+      return
+    }
+    setSelected((cur) => (cur && isSameDay(cur, day) ? null : startOfDay(day)))
+  }
+
   const schedule = buildSchedule()
   const byDay = new Map<string, DatedItem[]>()
   for (const d of schedule) {
-    const k = format(d.date, 'yyyy-MM-dd')
+    const k = key(d.date)
     if (!byDay.has(k)) byDay.set(k, [])
     byDay.get(k)!.push(d)
   }
 
-  const gridStart = startOfWeek(startOfMonth(month))
-  const gridEnd = endOfWeek(endOfMonth(month))
-  const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
-  const selectedItems = byDay.get(format(selected, 'yyyy-MM-dd')) || []
+  // Show every month from this one through the last scheduled item (and at least
+  // through the due date), as one long vertical scroll.
+  const latest = schedule.reduce((m, d) => (d.date > m ? d.date : m), getDueDate())
+  const firstMonth = startOfMonth(today)
+  const months: Date[] = []
+  let m = firstMonth
+  for (let i = 0; i < 30 && m <= startOfMonth(addMonths(latest, 1)); i++) {
+    months.push(m)
+    m = addMonths(m, 1)
+  }
+
+  const selectedItems = selected ? byDay.get(key(selected)) || [] : []
 
   return (
-    <div className="view view--fab">
+    <div className="view">
       {moving && (
         <div className="move-banner">
           <span>
@@ -90,79 +112,94 @@ export default function CalendarView() {
         </div>
       )}
 
-      <h1 className="page-title cal-title">{format(month, 'MMMM yyyy')}</h1>
+      {months.map((month) => {
+        const gridStart = startOfWeek(startOfMonth(month))
+        const gridEnd = endOfWeek(endOfMonth(month))
+        const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
+        const weeks: Date[][] = []
+        for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7))
 
-      <div className="cal-grid cal-grid--head">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="cal-dow">{d}</div>
-        ))}
-      </div>
-
-      <div className={'cal-grid' + (moving ? ' cal-grid--moving' : '')}>
-        {days.map((day) => {
-          const items = byDay.get(format(day, 'yyyy-MM-dd')) || []
-          const muted = !isSameMonth(day, month)
-          return (
-            <button
-              key={day.toISOString()}
-              className={
-                'cal-cell' +
-                (muted ? ' cal-cell--muted' : '') +
-                (isSameDay(day, selected) ? ' cal-cell--sel' : '') +
-                (isSameDay(day, today) ? ' cal-cell--today' : '')
-              }
-              onClick={() => (moving ? moveTo(day) : setSelected(startOfDay(day)))}
-            >
-              <span className="cal-num">{format(day, 'd')}</span>
-              <span className="cal-dots">
-                {items.slice(0, 3).map((d) => (
-                  <span key={d.item.id} className={'dot dot--' + d.item.category} />
-                ))}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="cal-day">
-        <div className="page-head">
-          <h2 className="section-title">{format(selected, 'EEEE, MMMM d')}</h2>
-          <button className="addbtn" onClick={() => setAdding(true)}>+ Add</button>
-        </div>
-        {selectedItems.length === 0 && <p className="muted">Nothing scheduled.</p>}
-        {selectedItems.length > 0 && !moving && (
-          <p className="muted small cal-hint">Press and hold an item to move it to another day.</p>
-        )}
-        <div className="list">
-          {selectedItems.map((d) => (
-            <div
-              key={d.item.id}
-              className={'row' + (moving && moving.item.id === d.item.id ? ' row--lifted' : '')}
-              onClick={() => rowClick(d)}
-              onPointerDown={() => startPress(d)}
-              onPointerUp={cancelPress}
-              onPointerLeave={cancelPress}
-              onPointerMove={cancelPress}
-            >
-              <span className={'dot dot--' + d.item.category} />
-              <div className="row__body">
-                <div className={'row__title' + (d.state.status === 'done' ? ' strike' : '')}>{d.item.title}</div>
-              </div>
-              {d.isEvent && <span className="pill pill--mine">yours</span>}
-              <span className="row__chev">›</span>
+        return (
+          <section key={key(month)} className="cal-month">
+            <h2 className="cal-month__title">{format(month, 'MMMM yyyy')}</h2>
+            <div className="cal-grid cal-grid--head">
+              {DOW.map((d, i) => (
+                <div key={i} className="cal-dow">{d}</div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {adding && <EventModal initialDate={format(selected, 'yyyy-MM-dd')} onClose={() => setAdding(false)} />}
+            {weeks.map((week, wi) => {
+              const expandHere =
+                selected && week.some((day) => isSameMonth(day, month) && isSameDay(day, selected))
+              return (
+                <div key={wi}>
+                  <div className={'cal-grid' + (moving ? ' cal-grid--moving' : '')}>
+                    {week.map((day) => {
+                      const items = byDay.get(key(day)) || []
+                      const muted = !isSameMonth(day, month)
+                      return (
+                        <button
+                          key={day.toISOString()}
+                          className={
+                            'cal-cell' +
+                            (muted ? ' cal-cell--muted' : '') +
+                            (selected && isSameDay(day, selected) ? ' cal-cell--sel' : '') +
+                            (isSameDay(day, today) ? ' cal-cell--today' : '')
+                          }
+                          onClick={() => onDayClick(day)}
+                        >
+                          <span className="cal-num">{format(day, 'd')}</span>
+                          <span className="cal-dots">
+                            {items.slice(0, 3).map((d) => (
+                              <span key={d.item.id} className={'dot dot--' + d.item.category} />
+                            ))}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
 
-      <button className="fab fab--left" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month">
-        ‹
-      </button>
-      <button className="fab fab--right" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month">
-        ›
-      </button>
+                  {expandHere && selected && (
+                    <div className="cal-expand">
+                      <div className="page-head">
+                        <h3 className="section-title">{format(selected, 'EEEE, MMMM d')}</h3>
+                        <button className="addbtn" onClick={() => setAdding(true)}>+ Add</button>
+                      </div>
+                      {selectedItems.length === 0 && <p className="muted small">Nothing here yet.</p>}
+                      <div className="list">
+                        {selectedItems.map((d) => (
+                          <div
+                            key={d.item.id}
+                            className="row"
+                            onClick={() => openItem(d)}
+                            onPointerDown={() => startPress(d)}
+                            onPointerUp={cancelPress}
+                            onPointerLeave={cancelPress}
+                            onPointerMove={cancelPress}
+                          >
+                            <span className={'dot dot--' + d.item.category} />
+                            <div className="row__body">
+                              <div className={'row__title' + (d.state.status === 'done' ? ' strike' : '')}>
+                                {d.item.title}
+                              </div>
+                            </div>
+                            {d.isEvent && <span className="pill pill--mine">yours</span>}
+                            <span className="row__chev">›</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </section>
+        )
+      })}
+
+      {adding && selected && (
+        <EventModal initialDate={key(selected)} onClose={() => setAdding(false)} />
+      )}
     </div>
   )
 }
