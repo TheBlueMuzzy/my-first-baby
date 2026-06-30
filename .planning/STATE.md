@@ -171,6 +171,29 @@ interaction feel, live photos, heart icon, add-your-own task/event, long-press r
   re-seeds the July 13 first visit. Restores recommended dates/order, clears check-offs &
   notes. Photos/account untouched. Verified UI renders (not executed on Muzzy's data).
 
+## Done — desktop bounding, undo toasts, bottom controls (2026-06-30, deployed)
+- **Bounded layout:** whole app (incl. tabbar) constrained to a centered `--col` (560px)
+  column; tabbar uses `left:50%/translateX(-50%)`. Fixes edge-to-edge desktop nav.
+- **Drag:** replaced detached DragOverlay (flew out of the column) with in-place self-lift
+  (`.sortable-row--dragging .row` tilt+shadow). Robust — can't leave the column.
+- **Toasts:** `src/lib/toast.ts` + `Toaster.tsx` (bottom snackbar, Undo, ~4s auto-fade),
+  rendered in App. Wired: TaskRow done-toggle, Agenda drag move, Calendar long-press move,
+  EventDetail delete + done, TaskDetail done/skip.
+- **Bottom controls:** Back buttons (TaskDetail/EventDetail/Account) and Calendar month
+  arrows are now floating thumb-zone FABs (`.fab--left/--right`, `.fab--back`) just above
+  the tabbar; `.view--fab` adds clearance. Calendar keeps the month title at top (read),
+  arrows at bottom (act). Removed top back buttons + top cal-head arrows.
+- **Gotcha fixed:** the `.view` fade-in animated `transform`, creating a containing block
+  that trapped `position:fixed` FABs mid-screen. Made fade-in opacity-only. Verified FABs
+  now sit at the column's bottom corners (rect bottom = viewport - 78px).
+
+## PWA cache note (IMPORTANT for testing)
+The live app registers a service worker (`registerType: 'autoUpdate'`). After a deploy, the
+FIRST load serves the cached old build and fetches the new one in the background; the NEW
+build shows on the NEXT load. So when testing the live URL, **reload twice** (or close/reopen)
+to see a fresh deploy. (Confirmed: a stale SW was hiding the new sign-in "Forgot password?"
+link until the SW updated.) For rapid iteration, localhost dev has no SW (instant).
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
