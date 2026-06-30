@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { format, startOfDay, differenceInCalendarDays } from 'date-fns'
 import { useStoreVersion } from '../lib/useStore'
 import { getDueDate, setDueDate, getProgress, babySize, trimesterForWeek } from '../lib/pregnancy'
+import { Link } from 'react-router-dom'
 import { touch, pushDueDate, getJoinCode } from '../lib/storage'
 import { buildSchedule } from '../lib/schedule'
-import { signOut } from '../auth/AuthGate'
 import TaskRow from '../components/TaskRow'
 import Emergency from '../components/Emergency'
 
@@ -102,9 +102,9 @@ function AccountCard() {
         Have them open the app, choose <strong>Join my partner</strong>, and enter this code. You'll both see the
         same plan, notes, and photos.
       </p>
-      <button className="linkbtn linkbtn--dark" onClick={() => signOut()}>
-        Sign out
-      </button>
+      <Link className="linkbtn linkbtn--dark" to="/account">
+        Manage account ›
+      </Link>
     </section>
   )
 }

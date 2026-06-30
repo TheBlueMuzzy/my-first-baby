@@ -249,6 +249,7 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .auth__submit { width: 100%; margin-top: 6px; }
 .auth__switch { display: block; width: 100%; text-align: center; margin-top: 12px; color: var(--sage-deep); opacity: 1; }
 .auth__msg { color: var(--terra); font-size: 14px; margin: 4px 0 10px; }
+.auth__msg--ok { color: var(--sage-deep); }
 .auth__tabs { justify-content: center; }
 .or-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 16px 4px; }
 .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }

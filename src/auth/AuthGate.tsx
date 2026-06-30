@@ -8,7 +8,7 @@ import { getDueDate } from '../lib/pregnancy'
 // sign-in / setup screens instead of the app. Once they're in, sync is switched on
 // and the real app renders.
 
-type Stage = 'loading' | 'signin' | 'onboarding' | 'ready'
+type Stage = 'loading' | 'signin' | 'onboarding' | 'ready' | 'recovery'
 
 export default function AuthGate({ children }: { children: ReactNode }) {
   // If Supabase isn't configured, run fully on-device (no sign-in needed).
@@ -35,8 +35,13 @@ function CloudGate({ children }: { children: ReactNode }) {
 
     resolve()
 
-    const { data: sub } = supabase!.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase!.auth.onAuthStateChange((event, session) => {
       if (!active) return
+      if (event === 'PASSWORD_RECOVERY') {
+        // Arrived from a reset-password email link — let them set a new one.
+        setStage('recovery')
+        return
+      }
       if (!session) {
         deactivateSync()
         setStage('signin')
@@ -73,6 +78,9 @@ function CloudGate({ children }: { children: ReactNode }) {
 
   if (stage === 'loading') {
     return <Splash text="Loading…" />
+  }
+  if (stage === 'recovery') {
+    return <SetNewPassword onDone={() => resolveHousehold()} />
   }
   if (stage === 'signin') {
     return <SignIn />
@@ -123,6 +131,26 @@ function SignIn() {
     }
   }
 
+  async function forgot() {
+    if (!email) {
+      setMsg('Enter your email above first, then tap “Forgot password.”')
+      return
+    }
+    setBusy(true)
+    setMsg(null)
+    try {
+      const { error } = await supabase!.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname,
+      })
+      if (error) throw error
+      setMsg('If that email has an account, a reset link is on its way.')
+    } catch (err: any) {
+      setMsg(friendlyAuthError(err?.message))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="auth">
       <div className="auth__brand">My First Baby 🌱</div>
@@ -159,6 +187,11 @@ function SignIn() {
         >
           {mode === 'in' ? 'New here? Create an account' : 'Already have an account? Sign in'}
         </button>
+        {mode === 'in' && (
+          <button type="button" className="linkbtn auth__switch" onClick={forgot} disabled={busy}>
+            Forgot password?
+          </button>
+        )}
       </form>
     </div>
   )
@@ -257,6 +290,57 @@ function Onboarding({ onDone }: { onDone: () => void }) {
           {busy === 'create' ? 'Setting up…' : 'Create our space'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function SetNewPassword({ onDone }: { onDone: () => void }) {
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setMsg(null)
+    if (password.length < 6) {
+      setMsg('Password must be at least 6 characters.')
+      return
+    }
+    if (password !== confirm) {
+      setMsg("Passwords don't match.")
+      return
+    }
+    setBusy(true)
+    try {
+      const { error } = await supabase!.auth.updateUser({ password })
+      if (error) throw error
+      onDone()
+    } catch (err: any) {
+      setMsg(err?.message ?? 'Could not set your password.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="auth">
+      <div className="auth__brand">Set a new password</div>
+      <form className="auth__card" onSubmit={submit}>
+        <h2>Choose a new password</h2>
+        <div className="field">
+          <label>New password</label>
+          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Confirm new password</label>
+          <input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+        </div>
+        {msg && <p className="auth__msg">{msg}</p>}
+        <button className="btn btn--on auth__submit" disabled={busy || !password || !confirm}>
+          {busy ? 'Saving…' : 'Save password'}
+        </button>
+      </form>
     </div>
   )
 }
