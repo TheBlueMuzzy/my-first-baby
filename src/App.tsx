@@ -27,8 +27,8 @@ export default function App() {
           </main>
           <nav className="tabbar">
             <Tab to="/" label="Today" icon="◉" />
-            <Tab to="/calendar" label="Calendar" icon="▦" />
             <Tab to="/schedule" label="Schedule" icon="☰" />
+            <Tab to="/calendar" label="Calendar" icon="▦" />
             <Tab to="/gallery" label="Gallery" icon="❏" />
             <Tab to="/account" label="Account" icon={<PersonIcon />} />
           </nav>
