@@ -68,17 +68,25 @@ export function setNote(key: string, v: string) {
   localStorage.setItem('mfb.note.' + key, v)
 }
 
-// ---------- Custom birth-plan items ----------
-export interface PlanItem {
+// ---------- Hidden preset items (so defaults can be removed but restored) ----------
+export function getHidden(key: string): string[] {
+  return read<string>('mfb.hidden.' + key)
+}
+export function setHidden(key: string, ids: string[]) {
+  write('mfb.hidden.' + key, ids)
+}
+
+// ---------- Custom checklist items (birth plan, hospital bag, …) ----------
+export interface CustomItem {
   id: string
   group: string
   text: string
 }
-export function getPlanItems(): PlanItem[] {
-  return read<PlanItem>('mfb.birthplan.custom')
+export function getCustomItems(key: string): CustomItem[] {
+  return read<CustomItem>('mfb.custom.' + key)
 }
-export function savePlanItems(a: PlanItem[]) {
-  write('mfb.birthplan.custom', a)
+export function saveCustomItems(key: string, a: CustomItem[]) {
+  write('mfb.custom.' + key, a)
 }
 
 // ---------- Baby names ----------

@@ -7,7 +7,8 @@ import {
   getChecks, toggleCheck, getNote, setNote,
   getNames, saveNames,
   getWeights, saveWeights,
-  PlanItem, getPlanItems, savePlanItems,
+  CustomItem, getCustomItems, saveCustomItems,
+  getHidden, setHidden,
 } from '../lib/tools'
 
 function now() {
@@ -289,27 +290,113 @@ const BAG: { group: string; items: string[] }[] = [
 ]
 
 function HospitalBag() {
-  const [checks, setChecks] = useState(getChecks('bag'))
-  const total = BAG.reduce((n, g) => n + g.items.length, 0)
+  return (
+    <div>
+      <p className="tool-hint">Pack by ~week 35–36. The hospital usually provides diapers, wipes, pads &amp; peri bottle — confirm with yours. Add your own or remove anything you don't need.</p>
+      <EditableChecklist storeKey="bag" groups={BAG} progressWord="packed" />
+    </div>
+  )
+}
+
+/**
+ * A checklist whose preset items can be checked, removed (with tap-to-confirm),
+ * or added to per section. Removed presets can be restored. Used by the hospital
+ * bag and birth plan.
+ */
+function EditableChecklist({
+  storeKey,
+  groups,
+  progressWord,
+}: {
+  storeKey: string
+  groups: { group: string; items: string[] }[]
+  progressWord?: string
+}) {
+  const [checks, setChecks] = useState(getChecks(storeKey))
+  const [custom, setCustom] = useState<CustomItem[]>(getCustomItems(storeKey))
+  const [hidden, setHiddenState] = useState<string[]>(getHidden(storeKey))
+  const [addingGroup, setAddingGroup] = useState<string | null>(null)
+  const [addText, setAddText] = useState('')
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  function addItem(group: string) {
+    const text = addText.trim()
+    if (!text) return
+    const next = [...custom, { id: crypto.randomUUID(), group, text }]
+    setCustom(next)
+    saveCustomItems(storeKey, next)
+    setAddText('')
+    setAddingGroup(null)
+  }
+  function removeCustom(id: string) {
+    const next = custom.filter((c) => c.id !== id)
+    setCustom(next)
+    saveCustomItems(storeKey, next)
+    if (getChecks(storeKey)[id]) setChecks(toggleCheck(storeKey, id))
+    setConfirmId(null)
+  }
+  function hidePreset(id: string) {
+    const next = [...hidden, id]
+    setHiddenState(next)
+    setHidden(storeKey, next)
+    if (getChecks(storeKey)[id]) setChecks(toggleCheck(storeKey, id))
+    setConfirmId(null)
+  }
+
+  function Row({ id, text, onRemove }: { id: string; text: string; onRemove: () => void }) {
+    const cbId = 'cb-' + storeKey + '-' + id
+    return (
+      <div className="checkrow checkrow--item checkrow--custom">
+        <input id={cbId} type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck(storeKey, id))} />
+        <label htmlFor={cbId} className={'plan-custom__text' + (checks[id] ? ' strike muted' : '')}>{text}</label>
+        {confirmId === id ? (
+          <span className="row-confirm">
+            <button className="row-confirm__yes" onClick={onRemove}>Remove</button>
+            <button className="row-confirm__no" onClick={() => setConfirmId(null)}>Cancel</button>
+          </span>
+        ) : (
+          <button className="row-x" onClick={() => setConfirmId(id)} aria-label="Remove item">✕</button>
+        )}
+      </div>
+    )
+  }
+
+  const visibleTotal =
+    groups.reduce((n, g) => n + g.items.filter((i) => !hidden.includes(g.group + ':' + i)).length, 0) + custom.length
   const done = Object.values(checks).filter(Boolean).length
 
   return (
     <div>
-      <p className="tool-hint">Pack by ~week 35–36. The hospital usually provides diapers, wipes, pads &amp; peri bottle — confirm with yours. {done}/{total} packed.</p>
-      {BAG.map((g) => (
-        <section key={g.group} style={{ marginBottom: 14 }}>
-          <h2 className="section-title">{g.group}</h2>
-          {g.items.map((item) => {
-            const id = g.group + ':' + item
-            return (
-              <label key={id} className="checkrow checkrow--item">
-                <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('bag', id))} />
-                <span className={checks[id] ? 'strike muted' : ''}>{item}</span>
-              </label>
-            )
-          })}
-        </section>
-      ))}
+      {progressWord && <p className="checklist-progress muted small">{done}/{visibleTotal} {progressWord}</p>}
+      {groups.map((g) => {
+        const presets = g.items.filter((item) => !hidden.includes(g.group + ':' + item))
+        const mine = custom.filter((c) => c.group === g.group)
+        return (
+          <section key={g.group} style={{ marginBottom: 16 }}>
+            <h2 className="section-title">{g.group}</h2>
+            {presets.map((item) => {
+              const id = g.group + ':' + item
+              return <Row key={id} id={id} text={item} onRemove={() => hidePreset(id)} />
+            })}
+            {mine.map((c) => (
+              <Row key={c.id} id={c.id} text={c.text} onRemove={() => removeCustom(c.id)} />
+            ))}
+            {addingGroup === g.group ? (
+              <form className="name-add" onSubmit={(e) => { e.preventDefault(); addItem(g.group) }}>
+                <input value={addText} onChange={(e) => setAddText(e.target.value)} placeholder="Add your own…" autoFocus />
+                <button className="btn btn--on" type="submit" disabled={!addText.trim()}>Add</button>
+              </form>
+            ) : (
+              <button className="plan-add" onClick={() => { setAddingGroup(g.group); setAddText('') }}>+ Add your own</button>
+            )}
+          </section>
+        )
+      })}
+      {hidden.length > 0 && (
+        <button className="linkbtn linkbtn--dark" onClick={() => { setHiddenState([]); setHidden(storeKey, []) }}>
+          Restore {hidden.length} removed default{hidden.length === 1 ? '' : 's'}
+        </button>
+      )}
     </div>
   )
 }
@@ -325,83 +412,11 @@ const PLAN: { group: string; items: string[] }[] = [
 ]
 
 function BirthPlan() {
-  const [checks, setChecks] = useState(getChecks('birthplan'))
   const [notes, setNotes] = useState(getNote('birthplan'))
-  const [custom, setCustom] = useState<PlanItem[]>(getPlanItems())
-  const [addingGroup, setAddingGroup] = useState<string | null>(null)
-  const [addText, setAddText] = useState('')
-  const [confirmId, setConfirmId] = useState<string | null>(null)
-
-  function addItem(group: string) {
-    const text = addText.trim()
-    if (!text) return
-    const next = [...custom, { id: crypto.randomUUID(), group, text }]
-    setCustom(next)
-    savePlanItems(next)
-    setAddText('')
-    setAddingGroup(null)
-  }
-  function removeItem(id: string) {
-    setCustom((cur) => {
-      const next = cur.filter((c) => c.id !== id)
-      savePlanItems(next)
-      return next
-    })
-    if (getChecks('birthplan')[id]) setChecks(toggleCheck('birthplan', id))
-    setConfirmId(null)
-  }
-
   return (
     <div>
-      <p className="tool-hint">Check the preferences that matter to you, and add your own to any section. A starting point to talk through with your provider — birth rarely goes exactly to plan.</p>
-      {PLAN.map((g) => {
-        const mine = custom.filter((c) => c.group === g.group)
-        return (
-          <section key={g.group} style={{ marginBottom: 16 }}>
-            <h2 className="section-title">{g.group}</h2>
-
-            {g.items.map((item) => {
-              const id = g.group + ':' + item
-              return (
-                <label key={id} className="checkrow checkrow--item">
-                  <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('birthplan', id))} />
-                  <span>{item}</span>
-                </label>
-              )
-            })}
-
-            {mine.map((c) => (
-              <div key={c.id} className="checkrow checkrow--item checkrow--custom">
-                <input
-                  id={'cb-' + c.id}
-                  type="checkbox"
-                  checked={!!checks[c.id]}
-                  onChange={() => setChecks(toggleCheck('birthplan', c.id))}
-                />
-                <label htmlFor={'cb-' + c.id} className="plan-custom__text">{c.text}</label>
-                {confirmId === c.id ? (
-                  <span className="row-confirm">
-                    <button className="row-confirm__yes" onClick={() => removeItem(c.id)}>Remove</button>
-                    <button className="row-confirm__no" onClick={() => setConfirmId(null)}>Cancel</button>
-                  </span>
-                ) : (
-                  <button className="row-x" onClick={() => setConfirmId(c.id)} aria-label="Remove item">✕</button>
-                )}
-              </div>
-            ))}
-
-            {addingGroup === g.group ? (
-              <form className="name-add" onSubmit={(e) => { e.preventDefault(); addItem(g.group) }}>
-                <input value={addText} onChange={(e) => setAddText(e.target.value)} placeholder="Add your own…" autoFocus />
-                <button className="btn btn--on" type="submit" disabled={!addText.trim()}>Add</button>
-              </form>
-            ) : (
-              <button className="plan-add" onClick={() => { setAddingGroup(g.group); setAddText('') }}>+ Add your own</button>
-            )}
-          </section>
-        )
-      })}
-
+      <p className="tool-hint">Check the preferences that matter to you, add your own, or remove any you don't need. A starting point to talk through with your provider — birth rarely goes exactly to plan.</p>
+      <EditableChecklist storeKey="birthplan" groups={PLAN} />
       <div className="field">
         <label>Anything else</label>
         <textarea

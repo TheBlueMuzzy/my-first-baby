@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStoreVersion } from '../lib/useStore'
 import { getEvent, updateEvent, deleteEvent, addEvent } from '../lib/storage'
@@ -22,6 +23,7 @@ export default function EventDetail() {
   }
 
   const current = ev
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function remove() {
     deleteEvent(id)
@@ -56,9 +58,14 @@ export default function EventDetail() {
         <button className={'btn' + (ev.done ? ' btn--on' : '')} onClick={toggleDone}>
           {ev.done ? '✓ Done' : 'Mark done'}
         </button>
-        <button className="btn" onClick={remove}>
-          Delete
-        </button>
+        {confirmDelete ? (
+          <>
+            <button className="btn btn--danger" onClick={remove}>Delete for good</button>
+            <button className="btn" onClick={() => setConfirmDelete(false)}>Cancel</button>
+          </>
+        ) : (
+          <button className="btn" onClick={() => setConfirmDelete(true)}>Delete</button>
+        )}
       </div>
 
       <div className="field">
