@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import {
-  KickSession, Contraction,
+  KickSession, Contraction, BabyName, WeightEntry,
   getKickSessions, addKickSession, clearKickSessions,
   getContractions, saveContractions,
+  getChecks, toggleCheck, getNote, setNote,
+  getNames, saveNames,
+  getWeights, saveWeights,
 } from '../lib/tools'
 
 function now() {
   return Date.now()
 }
-
-/** "3m 05s" / "45s" */
 function fmtDur(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000))
   const m = Math.floor(s / 60)
@@ -22,33 +22,45 @@ function fmtClock(ts: number): string {
   return format(new Date(ts), 'h:mm a')
 }
 
+type Tab = 'kicks' | 'contractions' | 'names' | 'bag' | 'birthplan' | 'weight'
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'kicks', label: 'Kicks' },
+  { id: 'contractions', label: 'Contractions' },
+  { id: 'names', label: 'Names' },
+  { id: 'bag', label: 'Hospital bag' },
+  { id: 'birthplan', label: 'Birth plan' },
+  { id: 'weight', label: 'Weight' },
+]
+
 export default function Tools() {
-  const navigate = useNavigate()
-  const [tab, setTab] = useState<'kicks' | 'contractions'>('kicks')
+  const [tab, setTab] = useState<Tab>('kicks')
 
   return (
-    <div className="view view--fab">
+    <div className="view">
       <h1 className="page-title">Tools</h1>
       <div className="chips">
-        <button className={'chip' + (tab === 'kicks' ? ' chip--on' : '')} onClick={() => setTab('kicks')}>
-          Kick counter
-        </button>
-        <button className={'chip' + (tab === 'contractions' ? ' chip--on' : '')} onClick={() => setTab('contractions')}>
-          Contractions
-        </button>
+        {TABS.map((t) => (
+          <button key={t.id} className={'chip' + (tab === t.id ? ' chip--on' : '')} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {tab === 'kicks' ? <KickCounter /> : <ContractionTimer />}
+      {tab === 'kicks' && <KickCounter />}
+      {tab === 'contractions' && <ContractionTimer />}
+      {tab === 'names' && <NameList />}
+      {tab === 'bag' && <HospitalBag />}
+      {tab === 'birthplan' && <BirthPlan />}
+      {tab === 'weight' && <WeightTracker />}
 
       <p className="footer-note muted small">
-        A helper, not medical advice — follow your OB or midwife's guidance on counting and when to call.
+        Helpers, not medical advice — follow your OB or midwife's guidance.
       </p>
-
-      <button className="fab fab--left fab--back" onClick={() => navigate(-1)} aria-label="Back">‹</button>
     </div>
   )
 }
 
+// ============================ Kick counter ============================
 const GOAL = 10
 
 function KickCounter() {
@@ -58,7 +70,6 @@ function KickCounter() {
   const [sessions, setSessions] = useState<KickSession[]>(getKickSessions())
   const [doneMsg, setDoneMsg] = useState<string | null>(null)
 
-  // Tick every second so the elapsed time updates while counting.
   useEffect(() => {
     if (startedAt == null) return
     const t = setInterval(() => setTick((n) => n + 1), 1000)
@@ -83,17 +94,6 @@ function KickCounter() {
     }
   }
 
-  function reset() {
-    setCount(0)
-    setStartedAt(null)
-    setDoneMsg(null)
-  }
-
-  function clearHistory() {
-    clearKickSessions()
-    setSessions([])
-  }
-
   const elapsed = startedAt ? now() - startedAt : 0
 
   return (
@@ -102,23 +102,20 @@ function KickCounter() {
         Tap each time you feel a movement. Many providers suggest noting how long it takes to feel {GOAL} — often
         within about 2 hours. If it's much slower than usual, call your provider.
       </p>
-
       <div className="tool-count">{count}<span className="tool-count__goal"> / {GOAL}</span></div>
       <div className="tool-timer">{startedAt ? fmtDur(elapsed) : 'not started'}</div>
-
-      <button className="tool-bigbtn" onClick={kick}>
-        {startedAt ? 'Felt a movement' : 'Start · felt a movement'}
-      </button>
+      <button className="tool-bigbtn" onClick={kick}>{startedAt ? 'Felt a movement' : 'Start · felt a movement'}</button>
       {startedAt != null && (
-        <button className="linkbtn linkbtn--dark tool-reset" onClick={reset}>Reset this session</button>
+        <button className="linkbtn linkbtn--dark tool-reset" onClick={() => { setCount(0); setStartedAt(null); setDoneMsg(null) }}>
+          Reset this session
+        </button>
       )}
       {doneMsg && <p className="auth__msg auth__msg--ok">{doneMsg}</p>}
-
       {sessions.length > 0 && (
         <>
           <div className="page-head" style={{ marginTop: 20 }}>
             <h2 className="section-title">Recent counts</h2>
-            <button className="linkbtn linkbtn--dark" onClick={clearHistory}>Clear</button>
+            <button className="linkbtn linkbtn--dark" onClick={() => { clearKickSessions(); setSessions([]) }}>Clear</button>
           </div>
           <div className="list">
             {sessions.map((s) => (
@@ -134,6 +131,7 @@ function KickCounter() {
   )
 }
 
+// ============================ Contraction timer ============================
 function ContractionTimer() {
   const [log, setLog] = useState<Contraction[]>(getContractions())
   const [activeStart, setActiveStart] = useState<number | null>(null)
@@ -158,19 +156,12 @@ function ContractionTimer() {
     }
   }
 
-  function clearAll() {
-    setLog([])
-    saveContractions([])
-  }
-
-  // Stats over the last hour (log is newest-first).
   const hourAgo = now() - 3600_000
   const recent = log.filter((c) => c.start >= hourAgo)
   const avgDur = recent.length ? recent.reduce((s, c) => s + (c.end - c.start), 0) / recent.length : 0
   const gaps: number[] = []
   for (let i = 0; i < recent.length - 1; i++) gaps.push(recent[i].start - recent[i + 1].start)
   const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0
-
   const active = activeStart != null
   const activeElapsed = active ? now() - (activeStart as number) : 0
 
@@ -178,38 +169,32 @@ function ContractionTimer() {
     <div>
       <p className="tool-hint">
         Tap to start when a contraction begins, tap again when it ends. A common guide is <strong>“5-1-1”</strong> —
-        contractions about 5 minutes apart, lasting about 1 minute, for 1 hour — but your provider's instructions come
-        first.
+        about 5 minutes apart, lasting about 1 minute, for 1 hour — but your provider's instructions come first.
       </p>
-
       <div className="tool-timer tool-timer--big">{active ? fmtDur(activeElapsed) : '—'}</div>
       <button className={'tool-bigbtn' + (active ? ' tool-bigbtn--stop' : '')} onClick={toggle}>
         {active ? 'Stop (contraction ended)' : 'Start contraction'}
       </button>
-
       {recent.length > 0 && (
         <p className="tool-summary muted small">
           Last hour: {recent.length} contraction{recent.length === 1 ? '' : 's'} · avg {fmtDur(avgDur)} long
           {avgGap > 0 && <> · about every {fmtDur(avgGap)}</>}
         </p>
       )}
-
       {log.length > 0 && (
         <>
           <div className="page-head" style={{ marginTop: 16 }}>
             <h2 className="section-title">History</h2>
-            <button className="linkbtn linkbtn--dark" onClick={clearAll}>Clear</button>
+            <button className="linkbtn linkbtn--dark" onClick={() => { setLog([]); saveContractions([]) }}>Clear</button>
           </div>
           <div className="list">
             {log.map((c, i) => {
-              const nextOlder = log[i + 1]
-              const gap = nextOlder ? c.start - nextOlder.start : null
+              const older = log[i + 1]
+              const gap = older ? c.start - older.start : null
               return (
                 <div key={c.id} className="tool-row">
                   <span>{fmtClock(c.start)}</span>
-                  <span className="muted">
-                    {fmtDur(c.end - c.start)} long{gap != null && <> · {fmtDur(gap)} apart</>}
-                  </span>
+                  <span className="muted">{fmtDur(c.end - c.start)} long{gap != null && <> · {fmtDur(gap)} apart</>}</span>
                 </div>
               )
             })}
@@ -217,5 +202,231 @@ function ContractionTimer() {
         </>
       )}
     </div>
+  )
+}
+
+// ============================ Baby names ============================
+function NameList() {
+  const [sex, setSex] = useState<'boy' | 'girl'>('girl')
+  const [names, setNames] = useState<BabyName[]>(getNames())
+  const [input, setInput] = useState('')
+
+  function add() {
+    const n = input.trim()
+    if (!n) return
+    const next = [...names, { id: crypto.randomUUID(), name: n, sex, fav: false }]
+    setNames(next)
+    saveNames(next)
+    setInput('')
+  }
+  function update(next: BabyName[]) {
+    setNames(next)
+    saveNames(next)
+  }
+
+  const list = names
+    .filter((n) => n.sex === sex)
+    .sort((a, b) => (a.fav === b.fav ? a.name.localeCompare(b.name) : a.fav ? -1 : 1))
+
+  return (
+    <div>
+      <p className="tool-hint">Jot down name ideas and tap the heart for favorites. (On this device for now.)</p>
+      <div className="chips">
+        <button className={'chip' + (sex === 'girl' ? ' chip--on' : '')} onClick={() => setSex('girl')}>Girl</button>
+        <button className={'chip' + (sex === 'boy' ? ' chip--on' : '')} onClick={() => setSex('boy')}>Boy</button>
+      </div>
+      <form
+        className="name-add"
+        onSubmit={(e) => {
+          e.preventDefault()
+          add()
+        }}
+      >
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Add a ${sex} name…`} />
+        <button className="btn btn--on" type="submit" disabled={!input.trim()}>Add</button>
+      </form>
+      {list.length === 0 && <p className="muted small">No {sex} names yet.</p>}
+      <div className="list">
+        {list.map((n) => (
+          <div key={n.id} className="tool-row">
+            <button
+              className={'namefav' + (n.fav ? ' namefav--on' : '')}
+              onClick={() => update(names.map((x) => (x.id === n.id ? { ...x, fav: !x.fav } : x)))}
+              aria-label={n.fav ? 'Unfavorite' : 'Favorite'}
+            >
+              {n.fav ? '♥' : '♡'}
+            </button>
+            <span className="name-text">{n.name}</span>
+            <button className="linkbtn linkbtn--dark" onClick={() => update(names.filter((x) => x.id !== n.id))}>
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================ Hospital bag ============================
+const BAG: { group: string; items: string[] }[] = [
+  { group: 'Mom', items: [
+    'Going-home outfit (loose, comfy)', 'Robe / nightgown / labor gown', 'Nursing bras + pads',
+    'Non-slip socks & slippers', 'Toiletries + glasses/contacts', 'Phone + extra-long charger',
+    'Own pillow (non-white case)', 'Snacks & drinks',
+  ] },
+  { group: 'Baby', items: [
+    'Car seat installed & inspected', 'Going-home outfit + backup size', '2–3 onesies, socks, hat, mittens', 'Swaddle blanket',
+  ] },
+  { group: 'Partner', items: [
+    'Clothes for 1–2+ days (layers)', 'Toiletries', 'Snacks + cash/card', 'Phone, charger, headphones',
+    'Pillow & blanket', 'Something for downtime',
+  ] },
+  { group: 'Documents', items: [
+    'Photo IDs (both of you)', 'Insurance card', 'Pre-registration confirmation', 'Birth plan (printed copies)',
+    "Pediatrician's name + contact", 'OB notes / records',
+  ] },
+]
+
+function HospitalBag() {
+  const [checks, setChecks] = useState(getChecks('bag'))
+  const total = BAG.reduce((n, g) => n + g.items.length, 0)
+  const done = Object.values(checks).filter(Boolean).length
+
+  return (
+    <div>
+      <p className="tool-hint">Pack by ~week 35–36. The hospital usually provides diapers, wipes, pads &amp; peri bottle — confirm with yours. {done}/{total} packed.</p>
+      {BAG.map((g) => (
+        <section key={g.group} style={{ marginBottom: 14 }}>
+          <h2 className="section-title">{g.group}</h2>
+          {g.items.map((item) => {
+            const id = g.group + ':' + item
+            return (
+              <label key={id} className="checkrow checkrow--item">
+                <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('bag', id))} />
+                <span className={checks[id] ? 'strike muted' : ''}>{item}</span>
+              </label>
+            )
+          })}
+        </section>
+      ))}
+    </div>
+  )
+}
+
+// ============================ Birth plan ============================
+const PLAN: { group: string; items: string[] }[] = [
+  { group: 'Atmosphere', items: ['Dim lights', 'My own music', 'Freedom to move / walk', 'Minimal interruptions'] },
+  { group: 'Pain & labor', items: ['Prefer unmedicated', 'Open to an epidural', 'Water / shower for comfort', 'Intermittent monitoring if possible'] },
+  { group: 'Delivery', items: ['Partner stays with me throughout', 'Mirror to watch', 'Partner cuts the cord'] },
+  { group: 'Right after birth', items: ['Immediate skin-to-skin', 'Delayed cord clamping', 'Delay the first bath', 'Partner announces the sex'] },
+  { group: 'Feeding', items: ['Plan to breastfeed', 'Plan to bottle-feed', 'Open to both'] },
+  { group: 'If a C-section is needed', items: ['Partner present in the OR', 'Skin-to-skin in the OR if possible', 'Explain steps as they happen'] },
+]
+
+function BirthPlan() {
+  const [checks, setChecks] = useState(getChecks('birthplan'))
+  const [notes, setNotes] = useState(getNote('birthplan'))
+
+  return (
+    <div>
+      <p className="tool-hint">Check the preferences that matter to you — a starting point to talk through with your provider. Nothing is set in stone; birth rarely goes exactly to plan.</p>
+      {PLAN.map((g) => (
+        <section key={g.group} style={{ marginBottom: 14 }}>
+          <h2 className="section-title">{g.group}</h2>
+          {g.items.map((item) => {
+            const id = g.group + ':' + item
+            return (
+              <label key={id} className="checkrow checkrow--item">
+                <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('birthplan', id))} />
+                <span>{item}</span>
+              </label>
+            )
+          })}
+        </section>
+      ))}
+      <div className="field">
+        <label>Anything else</label>
+        <textarea
+          rows={4}
+          value={notes}
+          onChange={(e) => { setNotes(e.target.value); setNote('birthplan', e.target.value) }}
+          placeholder="Other wishes, allergies, who to call…"
+        />
+      </div>
+    </div>
+  )
+}
+
+// ============================ Weight tracker ============================
+function WeightTracker() {
+  const [entries, setEntries] = useState<WeightEntry[]>(getWeights())
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [lbs, setLbs] = useState('')
+
+  function add(e: React.FormEvent) {
+    e.preventDefault()
+    const v = parseFloat(lbs)
+    if (!date || isNaN(v)) return
+    const next = [...entries.filter((x) => x.date !== date), { id: crypto.randomUUID(), date, lbs: v }]
+    next.sort((a, b) => a.date.localeCompare(b.date))
+    setEntries(next)
+    saveWeights(next)
+    setLbs('')
+  }
+  function remove(id: string) {
+    const next = entries.filter((x) => x.id !== id)
+    setEntries(next)
+    saveWeights(next)
+  }
+
+  const asc = [...entries].sort((a, b) => a.date.localeCompare(b.date))
+  const first = asc[0]
+  const last = asc[asc.length - 1]
+  const gained = first && last ? last.lbs - first.lbs : 0
+
+  return (
+    <div>
+      <p className="tool-hint">Log your weight over the weeks. (On this device for now.)</p>
+      <form className="weight-add" onSubmit={add}>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <input type="number" inputMode="decimal" step="0.1" value={lbs} onChange={(e) => setLbs(e.target.value)} placeholder="lbs" />
+        <button className="btn btn--on" type="submit" disabled={!lbs}>Add</button>
+      </form>
+
+      {asc.length >= 2 && (
+        <>
+          <Sparkline pts={asc.map((e) => e.lbs)} />
+          <p className="tool-summary muted small">
+            {gained >= 0 ? '+' : ''}{gained.toFixed(1)} lbs since {format(parseISO(first.date), 'MMM d')} · now {last.lbs} lbs
+          </p>
+        </>
+      )}
+
+      {asc.length === 0 && <p className="muted small">No entries yet.</p>}
+      <div className="list">
+        {[...entries].sort((a, b) => b.date.localeCompare(a.date)).map((e) => (
+          <div key={e.id} className="tool-row">
+            <span>{format(parseISO(e.date), 'EEE, MMM d')}</span>
+            <span className="muted">{e.lbs} lbs</span>
+            <button className="linkbtn linkbtn--dark" onClick={() => remove(e.id)}>Remove</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function Sparkline({ pts }: { pts: number[] }) {
+  const w = 300, h = 80, pad = 8
+  const min = Math.min(...pts), max = Math.max(...pts)
+  const range = max - min || 1
+  const step = (w - pad * 2) / (pts.length - 1)
+  const coords = pts
+    .map((v, i) => `${(pad + i * step).toFixed(1)},${(pad + (h - pad * 2) * (1 - (v - min) / range)).toFixed(1)}`)
+    .join(' ')
+  return (
+    <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      <polyline points={coords} fill="none" stroke="var(--sage)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   )
 }

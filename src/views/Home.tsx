@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { format, startOfDay, differenceInCalendarDays } from 'date-fns'
 import { useStoreVersion } from '../lib/useStore'
 import { getDueDate, setDueDate, getProgress, babySize, trimesterForWeek } from '../lib/pregnancy'
-import { Link } from 'react-router-dom'
 import { touch, pushDueDate } from '../lib/storage'
 import { buildSchedule } from '../lib/schedule'
 import TaskRow from '../components/TaskRow'
@@ -81,11 +80,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      <Link to="/tools" className="card card--tool">
-        <div className="card__title">🤰 Labor &amp; baby tools ›</div>
-        <p className="muted small">Kick counter · contraction timer</p>
-      </Link>
 
       <p className="footer-note muted small">
         Reference only — your OB, midwife, and pediatrician override anything here.
