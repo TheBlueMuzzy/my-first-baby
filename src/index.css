@@ -198,6 +198,16 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .weekgroup__head--current .weekgroup__num { color: var(--sage-deep); }
 .weekgroup--current { background: #f1f5f1; border-radius: var(--radius); padding: 12px; margin-left: -12px; margin-right: -12px; }
 
+/* ---------- Sticky Schedule header (controls stay, cards scroll) ---------- */
+.sticky-head {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--bg);
+  margin: -20px -16px 6px; /* bleed over the view's padding to full width */
+  padding: 20px 16px 8px;
+}
+.sticky-head .chips { margin-bottom: 8px; }
+.sticky-head .cal-hint { margin: 0; }
+
 /* ---------- Schedule drag-and-drop ---------- */
 /* A floating tilted card follows the finger; the source slot turns into a dashed
    placeholder that slides to where the card will drop, opening a gap. */
@@ -226,7 +236,12 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .fab:active { transform: scale(0.92); background: #f1f5f1; }
 .fab--left { left: max(16px, calc(50% - var(--col) / 2 + 16px)); }
 .fab--right { right: max(16px, calc(50% - var(--col) / 2 + 16px)); }
-.fab--back { gap: 0; font-size: 24px; padding-right: 3px; }
+.fab--back {
+  gap: 0; font-size: 24px; padding-right: 3px;
+  background: var(--sage); color: #fff; border-color: var(--sage);
+  box-shadow: 0 4px 14px rgba(95, 124, 105, 0.35);
+}
+.fab--back:active { background: var(--sage-deep); }
 
 /* ---------- Toast / snackbar ---------- */
 .toast {

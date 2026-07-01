@@ -84,22 +84,23 @@ export default function Agenda() {
 
   return (
     <div className="view">
-      <div className="page-head">
-        <h1 className="page-title">Schedule</h1>
-        <button className="addbtn" onClick={() => setAdding(true)}>+ Add your own</button>
-      </div>
-      <div className="chips">
-        <button className={'chip' + (filter === 'all' ? ' chip--on' : '')} onClick={() => setFilter('all')}>
-          All
-        </button>
-        {CATEGORIES.map((c) => (
-          <button key={c} className={'chip' + (filter === c ? ' chip--on' : '')} onClick={() => setFilter(c)}>
-            <span className={'dot dot--' + c} /> {CATEGORY_LABEL[c]}
+      <div className="sticky-head">
+        <div className="page-head">
+          <h1 className="page-title">Schedule</h1>
+          <button className="addbtn" onClick={() => setAdding(true)}>+ Add your own</button>
+        </div>
+        <div className="chips">
+          <button className={'chip' + (filter === 'all' ? ' chip--on' : '')} onClick={() => setFilter('all')}>
+            All
           </button>
-        ))}
+          {CATEGORIES.map((c) => (
+            <button key={c} className={'chip' + (filter === c ? ' chip--on' : '')} onClick={() => setFilter(c)}>
+              <span className={'dot dot--' + c} /> {CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
+        <p className="muted small cal-hint">Press and hold a card to drag it to another day.</p>
       </div>
-
-      <p className="muted small cal-hint">Press and hold a card to drag it to another day.</p>
 
       <DndContext
         sensors={sensors}
