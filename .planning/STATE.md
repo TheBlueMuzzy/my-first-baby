@@ -229,6 +229,18 @@ Table-stakes we already cover: week-by-week + size, reschedulable plan, contract
 tools (now), emergency guidance, photos. Table-stakes we lack: reminders/notifications
 (deferred by Muzzy), richer weekly dev content, symptom/weight logging.
 
+## Done — Tools tab + top-bar account + 4 more tools (2026-07-01, deployed)
+- **Nav restructure:** Tools is now a bottom nav tab (Today · Schedule · Calendar · Gallery ·
+  Tools). Account moved to a **top-bar avatar** (top-right, `TopBar` in App.tsx). New
+  `--topbar-h`; `.content` padded top+bottom so content sits between the two fixed bars.
+  Removed the Tools card from Today.
+- **Tools page (6 tabs):** Kicks, Contractions, **Names** (girl/boy + favorites),
+  **Hospital bag** (checklist sourced from guide `04`, grouped Mom/Baby/Partner/Documents),
+  **Birth plan** (grouped preference checkboxes + notes), **Weight** (entries + SVG
+  sparkline + total gained). Storage in `src/lib/tools.ts`, all **device-local** for now
+  (names + weight are the natural candidates to sync later). Removed the Tools back FAB
+  (it's a top-level tab now). Verified all tabs render, 0 errors.
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
