@@ -8,6 +8,8 @@ dist-ssr
 
 # Playwright MCP test artifacts
 .playwright-mcp
+# Stray screenshots at the repo root (public/*.png icons are still tracked)
+/*.png
 
 # Editor / OS
 .DS_Store
