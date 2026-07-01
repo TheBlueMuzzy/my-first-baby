@@ -241,6 +241,19 @@ tools (now), emergency guidance, photos. Table-stakes we lack: reminders/notific
   (names + weight are the natural candidates to sync later). Removed the Tools back FAB
   (it's a top-level tab now). Verified all tabs render, 0 errors.
 
+## Done — editable checklists, event delete-confirm, scrollbar layout (2026-07-01)
+- **EditableChecklist** shared component (`Tools.tsx`): both Hospital bag and Birth plan can
+  add custom items per section, remove any item (preset or custom) via ✕→Remove/Cancel, and
+  restore removed defaults. Storage generalized: `getCustomItems`/`saveCustomItems`(key),
+  `getHidden`/`setHidden`(key) in `lib/tools.ts`.
+- **Event delete** (`EventDetail`) now confirms: Delete → "Delete for good" / Cancel, then
+  the existing undo toast. (Presets in TaskDetail have no delete — skip only.)
+- **Layout refactor:** top bar + tab bar are now normal flex items (not `position:fixed`),
+  so nothing recenters when a scrollbar appears. `.app` is `height:100%`; `.content` is the
+  only scroller (`flex:1; min-height:0; overflow-y:auto; scrollbar-gutter:stable`) — the
+  scrollbar sits between the two bars (stops above the nav) and its space is always reserved,
+  so no horizontal squash. FABs/toast/modal remain viewport-fixed and still clear the nav.
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
