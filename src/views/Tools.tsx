@@ -7,6 +7,7 @@ import {
   getChecks, toggleCheck, getNote, setNote,
   getNames, saveNames,
   getWeights, saveWeights,
+  PlanItem, getPlanItems, savePlanItems,
 } from '../lib/tools'
 
 function now() {
@@ -326,24 +327,81 @@ const PLAN: { group: string; items: string[] }[] = [
 function BirthPlan() {
   const [checks, setChecks] = useState(getChecks('birthplan'))
   const [notes, setNotes] = useState(getNote('birthplan'))
+  const [custom, setCustom] = useState<PlanItem[]>(getPlanItems())
+  const [addingGroup, setAddingGroup] = useState<string | null>(null)
+  const [addText, setAddText] = useState('')
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  function addItem(group: string) {
+    const text = addText.trim()
+    if (!text) return
+    const next = [...custom, { id: crypto.randomUUID(), group, text }]
+    setCustom(next)
+    savePlanItems(next)
+    setAddText('')
+    setAddingGroup(null)
+  }
+  function removeItem(id: string) {
+    setCustom((cur) => {
+      const next = cur.filter((c) => c.id !== id)
+      savePlanItems(next)
+      return next
+    })
+    if (getChecks('birthplan')[id]) setChecks(toggleCheck('birthplan', id))
+    setConfirmId(null)
+  }
 
   return (
     <div>
-      <p className="tool-hint">Check the preferences that matter to you — a starting point to talk through with your provider. Nothing is set in stone; birth rarely goes exactly to plan.</p>
-      {PLAN.map((g) => (
-        <section key={g.group} style={{ marginBottom: 14 }}>
-          <h2 className="section-title">{g.group}</h2>
-          {g.items.map((item) => {
-            const id = g.group + ':' + item
-            return (
-              <label key={id} className="checkrow checkrow--item">
-                <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('birthplan', id))} />
-                <span>{item}</span>
-              </label>
-            )
-          })}
-        </section>
-      ))}
+      <p className="tool-hint">Check the preferences that matter to you, and add your own to any section. A starting point to talk through with your provider — birth rarely goes exactly to plan.</p>
+      {PLAN.map((g) => {
+        const mine = custom.filter((c) => c.group === g.group)
+        return (
+          <section key={g.group} style={{ marginBottom: 16 }}>
+            <h2 className="section-title">{g.group}</h2>
+
+            {g.items.map((item) => {
+              const id = g.group + ':' + item
+              return (
+                <label key={id} className="checkrow checkrow--item">
+                  <input type="checkbox" checked={!!checks[id]} onChange={() => setChecks(toggleCheck('birthplan', id))} />
+                  <span>{item}</span>
+                </label>
+              )
+            })}
+
+            {mine.map((c) => (
+              <div key={c.id} className="checkrow checkrow--item checkrow--custom">
+                <input
+                  id={'cb-' + c.id}
+                  type="checkbox"
+                  checked={!!checks[c.id]}
+                  onChange={() => setChecks(toggleCheck('birthplan', c.id))}
+                />
+                <label htmlFor={'cb-' + c.id} className="plan-custom__text">{c.text}</label>
+                {confirmId === c.id ? (
+                  <span className="row-confirm">
+                    <button className="row-confirm__yes" onClick={() => removeItem(c.id)}>Remove</button>
+                    <button className="row-confirm__no" onClick={() => setConfirmId(null)}>Cancel</button>
+                  </span>
+                ) : (
+                  <button className="row-x" onClick={() => setConfirmId(c.id)} aria-label="Remove item">✕</button>
+                )}
+              </div>
+            ))}
+
+            {addingGroup === g.group ? (
+              <form className="name-add" onSubmit={(e) => { e.preventDefault(); addItem(g.group) }}>
+                <input value={addText} onChange={(e) => setAddText(e.target.value)} placeholder="Add your own…" autoFocus />
+                <button className="btn btn--on" type="submit" disabled={!addText.trim()}>Add</button>
+              </form>
+            ) : (
+              <button className="plan-add" onClick={() => { setAddingGroup(g.group); setAddText('') }}>+ Add your own</button>
+            )}
+          </section>
+        )
+      })}
+
       <div className="field">
         <label>Anything else</label>
         <textarea

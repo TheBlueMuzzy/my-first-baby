@@ -68,6 +68,19 @@ export function setNote(key: string, v: string) {
   localStorage.setItem('mfb.note.' + key, v)
 }
 
+// ---------- Custom birth-plan items ----------
+export interface PlanItem {
+  id: string
+  group: string
+  text: string
+}
+export function getPlanItems(): PlanItem[] {
+  return read<PlanItem>('mfb.birthplan.custom')
+}
+export function savePlanItems(a: PlanItem[]) {
+  write('mfb.birthplan.custom', a)
+}
+
 // ---------- Baby names ----------
 export interface BabyName {
   id: string

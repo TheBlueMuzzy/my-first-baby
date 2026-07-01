@@ -437,6 +437,18 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 /* Checklist items (hospital bag, birth plan) */
 .checkrow--item { margin: 6px 2px; align-items: flex-start; }
 .checkrow--item input { margin-top: 1px; }
+.checkrow--custom { align-items: center; }
+.plan-custom__text { flex: 1; font-size: 15px; }
+.row-x { flex: none; background: none; border: none; color: var(--muted); font-size: 15px; padding: 2px 8px; line-height: 1; }
+.row-confirm { display: flex; gap: 6px; flex: none; }
+.row-confirm__yes { background: var(--terra); color: #fff; border: none; border-radius: 8px; padding: 5px 11px; font-size: 12px; font-weight: 600; }
+.row-confirm__no { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; font-size: 12px; color: var(--ink); }
+.plan-add {
+  display: block; width: 100%; margin-top: 8px; padding: 9px 12px;
+  background: none; border: 1px dashed var(--sage); border-radius: 10px;
+  color: var(--sage-deep); font-size: 14px; font-weight: 600;
+}
+.plan-add:active { background: #f1f5f1; }
 
 /* Baby names */
 .name-add, .weight-add { display: flex; gap: 8px; margin-bottom: 14px; }
