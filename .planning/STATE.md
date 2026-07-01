@@ -207,6 +207,28 @@ link until the SW updated.) For rapid iteration, localhost dev has no SW (instan
   fade-in), so the overlay is viewport-relative again. Verified by diagnosis, not live drag
   (synthetic dnd-kit drag won't start in the harness) — Muzzy to confirm feel on device.
 
+## Done — labor tools (2026-07-01, deployed)
+- `/tools` page (card on Today) with **kick counter** (tap to 10, tracks duration + recent
+  history) and **contraction timer** (start/stop, logs duration + frequency, last-hour
+  summary, 5-1-1 guidance). Logs are **device-local** (`src/lib/tools.ts`) — not synced;
+  can add cloud sync later. Both offline. Verified working, 0 errors.
+
+## Competitive research done (2026-07-01)
+Surveyed the leading pregnancy/first-year apps (What to Expect, BabyCenter, Ovia, The Bump,
+Flo, Glow, Sprout, Pregnancy+/Baby+, Huckleberry, Nara, Kinedu, Napper, etc.). Key gaps this
+app is well-positioned to own vs. incumbents:
+1. **True two-person shared pregnancy** — under-served (most are follow-only; only Sprout
+   syncs both ways). MyFirstBaby already does real 2-way sync — a genuine edge.
+2. **Seamless pregnancy → first-year in ONE app** — Flo/Glow/Sprout/Philips force a 2nd app.
+3. **Privacy-first / no data-selling** — incumbents have real trust wounds (Flo FTC + $56M;
+   Ovia sells employer data; Glow AG settlement). A clear differentiator to lean into.
+4. First-year tracking (feed/diaper/sleep, growth vs WHO/CDC, vaccines) — the biggest
+   feature gap once baby arrives.
+5. Bump-photo journaling with prompts/keepsake export — weak across the field.
+Table-stakes we already cover: week-by-week + size, reschedulable plan, contraction/kick
+tools (now), emergency guidance, photos. Table-stakes we lack: reminders/notifications
+(deferred by Muzzy), richer weekly dev content, symptom/weight logging.
+
 ## Possible future (not requested)
 - Photo realtime is on; consider optimistic UI on photo upload (currently re-fetches).
 - Rename household / leave household; multiple custom event reminders/notifications.
