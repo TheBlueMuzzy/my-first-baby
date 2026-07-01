@@ -101,6 +101,8 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 /* ---------- Cards ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 14px 0; }
 .card--accent { border-left: 4px solid var(--terra); }
+.card--tool { display: block; text-decoration: none; color: inherit; }
+.card--tool:active { background: #f4f1ec; }
 .card__label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
 .card__title { font-size: 17px; font-weight: 600; margin: 4px 0; }
 .card__date { color: var(--sage-deep); font-weight: 500; }
@@ -386,6 +388,23 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
   .btn:active, .chip:active, .row:active, .cal-cell:active, .photo-cell:active,
   .check:active, .navbtn:active, .emergency-btn:active { transform: none; }
 }
+
+/* ---------- Labor tools ---------- */
+.tool-hint { background: #f1f5f1; border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--ink); margin: 4px 0 16px; }
+.tool-count { text-align: center; font-size: 58px; font-weight: 700; color: var(--sage-deep); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tool-count__goal { font-size: 26px; color: var(--muted); font-weight: 600; }
+.tool-timer { text-align: center; font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: 16px; }
+.tool-timer--big { font-size: 34px; color: var(--ink); font-weight: 700; margin: 6px 0 14px; }
+.tool-bigbtn {
+  width: 100%; padding: 20px; font-size: 18px; font-weight: 600; border-radius: 16px;
+  border: none; background: var(--sage); color: #fff;
+  transition: transform .09s ease, background-color .15s ease;
+}
+.tool-bigbtn:active { transform: scale(0.98); }
+.tool-bigbtn--stop { background: var(--terra); }
+.tool-reset { display: block; width: 100%; text-align: center; margin-top: 10px; }
+.tool-summary { text-align: center; margin: 12px 0 0; }
+.tool-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 14px; }
 
 /* ---------- Utility ---------- */
 .muted { color: var(--muted); }

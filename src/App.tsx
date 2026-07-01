@@ -7,6 +7,7 @@ import Gallery from './views/Gallery'
 import TaskDetail from './views/TaskDetail'
 import EventDetail from './views/EventDetail'
 import Account from './views/Account'
+import Tools from './views/Tools'
 import Toaster from './components/Toaster'
 import AuthGate from './auth/AuthGate'
 
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/task/:id" element={<TaskDetail />} />
               <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/tools" element={<Tools />} />
             </Routes>
           </main>
           <nav className="tabbar">
