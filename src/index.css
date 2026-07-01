@@ -101,8 +101,15 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 /* ---------- Cards ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 14px 0; }
 .card--accent { border-left: 4px solid var(--terra); }
-.card--tool { display: block; text-decoration: none; color: inherit; }
-.card--tool:active { background: #f4f1ec; }
+.card--tool {
+  display: block; text-decoration: none; border: none; color: #fff;
+  background: linear-gradient(160deg, var(--sage) 0%, var(--sage-deep) 100%);
+  box-shadow: 0 6px 20px rgba(95, 124, 105, 0.25);
+  transition: transform .09s ease, filter .15s ease;
+}
+.card--tool .card__title { color: #fff; }
+.card--tool .muted { color: rgba(255, 255, 255, 0.85); }
+.card--tool:active { transform: scale(0.99); filter: brightness(0.96); }
 .card__label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
 .card__title { font-size: 17px; font-weight: 600; margin: 4px 0; }
 .card__date { color: var(--sage-deep); font-weight: 500; }
