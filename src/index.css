@@ -294,8 +294,13 @@ button, a, .row, .cal-cell, .chip, .tab, .photo-cell {
 .tag { padding: 8px 14px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 
 /* ---------- Modal ---------- */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 40; }
-.modal { background: var(--surface); width: 100%; max-width: 560px; border-radius: 20px 20px 0 0; padding: 20px 18px calc(24px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; }
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: flex-end; justify-content: center; z-index: 60;
+  /* Lift the sheet up so it clears the fixed nav bar. */
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+}
+.modal { background: var(--surface); width: 100%; max-width: var(--col); border-radius: 20px 20px 0 0; padding: 20px 18px 22px; max-height: 82vh; overflow-y: auto; }
 .modal__head { display: flex; align-items: center; justify-content: space-between; }
 .modal__head h2 { margin: 0; font-size: 20px; }
 .modal__close { background: none; border: none; font-size: 20px; color: var(--muted); }
